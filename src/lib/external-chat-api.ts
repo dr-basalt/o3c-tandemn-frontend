@@ -59,7 +59,7 @@ export interface StreamingChatCompletionChunk {
   }>;
 }
 
-const OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1';
+const OPENROUTER_API_BASE_URL = process.env.OPENROUTER_API_BASE_URL || 'https://openrouter.ai/api/v1';
 const TANDEM_API_BASE_URL = 'http://34.207.103.140:8000/v1';
 
 export class ExternalChatAPI {

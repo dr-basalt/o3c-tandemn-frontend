@@ -33,7 +33,7 @@ export interface OpenRouterChatResponse {
 
 export class OpenRouterClient {
   private apiKey: string;
-  private baseUrl: string = 'https://openrouter.ai/api/v1';
+  private baseUrl: string = process.env.OPENROUTER_API_BASE_URL || 'https://openrouter.ai/api/v1';
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.OPENROUTER_API_KEY || '';
