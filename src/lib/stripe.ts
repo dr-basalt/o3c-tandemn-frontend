@@ -64,7 +64,7 @@ export async function createCheckoutSession({
           product_data: {
             name: creditPackage.name,
             description: creditPackage.description,
-            images: [`${domain}/tandemn-logo-circle.svg`],
+            images: [`${domain}/o3c-logo-circle.svg`],
           },
           unit_amount: creditPackage.price,
         },

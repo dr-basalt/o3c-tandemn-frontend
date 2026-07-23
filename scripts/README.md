@@ -1,6 +1,6 @@
 # Migration Scripts
 
-This directory contains migration and maintenance scripts for the Tandemn platform.
+This directory contains migration and maintenance scripts for the O3C platform.
 
 ## Table of Contents
 

@@ -7,7 +7,7 @@ export interface IChatResponse {
   messageId?: string;
   inputText: string;
   responseText: string;
-  backendUsed: 'tandemn' | 'openrouter' | 'mock';
+  backendUsed: 'o3c' | 'openrouter' | 'mock';
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -52,7 +52,7 @@ const ChatResponseSchema = new mongoose.Schema<IChatResponse>({
   },
   backendUsed: {
     type: String,
-    enum: ['tandemn', 'openrouter', 'mock'],
+    enum: ['o3c', 'openrouter', 'mock'],
     required: true,
     index: true,
   },

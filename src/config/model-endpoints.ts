@@ -1,4 +1,4 @@
-// Model endpoint configuration for Tandemn models
+// Model endpoint configuration for O3C models
 export interface ModelEndpointConfig {
   modelId: string;
   endpoint: string;

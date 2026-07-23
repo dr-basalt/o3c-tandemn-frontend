@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Tandemn - Combining Heterogenous GPUs to run AI models',
+  title: 'O3C - Combining Heterogenous GPUs to run AI models',
   description: 'vRAM goes BRRRR',
   icons: {
     icon: '/favicon.png',

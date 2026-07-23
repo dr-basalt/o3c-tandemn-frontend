@@ -36,7 +36,7 @@ The Llama 3.3 70B model wasn't working because it had the wrong model ID and con
 ### 3. Updated Models Page (`app/models/page.tsx`)
 **Added API routing curl example:**
 ```bash
-curl --location 'https://tandemn-frontend-psi.vercel.app/api/v1/chat/completions' \
+curl --location 'https://o3c-frontend-psi.vercel.app/api/v1/chat/completions' \
 --header 'Authorization: Bearer YOUR_API_KEY' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -50,7 +50,7 @@ curl --location 'https://tandemn-frontend-psi.vercel.app/api/v1/chat/completions
 ## 🧪 Verification
 
 ### Production Test Results:
-✅ **Working via v1/chat API**: `https://tandemn-frontend-psi.vercel.app/api/v1/chat/completions`
+✅ **Working via v1/chat API**: `https://o3c-frontend-psi.vercel.app/api/v1/chat/completions`
 ✅ **Correct model ID**: `casperhansen/llama-3.3-70b-instruct-awq`  
 ✅ **Authentication**: Works with API key `gk-mLMITDrP_3ewsnz1nmzz`
 ✅ **Response**: Returns proper Llama responses

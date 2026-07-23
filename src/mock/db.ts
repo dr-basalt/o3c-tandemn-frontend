@@ -1,7 +1,7 @@
 import { Model, ChatRoom, Message, ModelsFilter, RankingModel, User, Transaction, Usage, CreditBalance } from './types';
 import { generateModels, getFeaturedModels, getKPIStats } from './seed';
 import { getModelById as getModelByIdFromConfig } from '@/lib/models-config';
-import { getModelById as getTandemnModelById, getAllModels as getAllTandemnModels } from '@/config/models';
+import { getModelById as getO3CModelById, getAllModels as getAllO3CModels } from '@/config/models';
 
 // In-memory database
 export class MockDB {
@@ -15,26 +15,26 @@ export class MockDB {
   public creditBalances: Map<string, CreditBalance> = new Map(); // userId -> balance
   
   private constructor() {
-    this.models = this.getTandemnModels();
+    this.models = this.getO3CModels();
     this.initializeDemoData();
   }
   
-  private getTandemnModels(): Model[] {
-    return getAllTandemnModels().map(tandemnModel => ({
-      id: tandemnModel.id,
-      name: tandemnModel.name,
-      vendor: tandemnModel.provider,
-      series: tandemnModel.provider.toLowerCase(),
-      short: tandemnModel.name.toLowerCase().replace(/\s+/g, '-'),
-      context: tandemnModel.context_length,
-      promptPrice: tandemnModel.input_price_per_1m,
-      completionPrice: tandemnModel.output_price_per_1m,
+  private getO3CModels(): Model[] {
+    return getAllO3CModels().map(o3cModel => ({
+      id: o3cModel.id,
+      name: o3cModel.name,
+      vendor: o3cModel.provider,
+      series: o3cModel.provider.toLowerCase(),
+      short: o3cModel.name.toLowerCase().replace(/\s+/g, '-'),
+      context: o3cModel.context_length,
+      promptPrice: o3cModel.input_price_per_1m,
+      completionPrice: o3cModel.output_price_per_1m,
       tokensPerWeek: 100000, // Mock popularity
       latencyMs: 1000, // Default latency
       weeklyGrowthPct: 5.2, // Mock growth
       modalities: ['text'],
-      description: tandemnModel.description,
-      badges: ['Tandem', ...(tandemnModel.capabilities || [])],
+      description: o3cModel.description,
+      badges: ['O3C', ...(o3cModel.capabilities || [])],
     } as Model));
   }
   
@@ -240,25 +240,25 @@ export class MockDB {
   }
   
   getModelById(id: string): Model | undefined {
-    // First try our Tandemn models
-    const tandemnModel = getTandemnModelById(id);
-    if (tandemnModel) {
-      // Convert Tandemn model to Mock model format
+    // First try our O3C models
+    const o3cModel = getO3CModelById(id);
+    if (o3cModel) {
+      // Convert O3C model to Mock model format
       return {
-        id: tandemnModel.id,
-        name: tandemnModel.name,
-        vendor: tandemnModel.provider,
-        series: tandemnModel.provider.toLowerCase(),
-        short: tandemnModel.name.toLowerCase().replace(/\s+/g, '-'),
-        context: tandemnModel.context_length,
-        promptPrice: tandemnModel.input_price_per_1m,
-        completionPrice: tandemnModel.output_price_per_1m,
+        id: o3cModel.id,
+        name: o3cModel.name,
+        vendor: o3cModel.provider,
+        series: o3cModel.provider.toLowerCase(),
+        short: o3cModel.name.toLowerCase().replace(/\s+/g, '-'),
+        context: o3cModel.context_length,
+        promptPrice: o3cModel.input_price_per_1m,
+        completionPrice: o3cModel.output_price_per_1m,
         tokensPerWeek: 100000, // Mock popularity
         latencyMs: 1000, // Default latency
         weeklyGrowthPct: 5.2, // Mock growth
         modalities: ['text'],
-        description: tandemnModel.description,
-        badges: ['Tandem', ...(tandemnModel.capabilities || [])],
+        description: o3cModel.description,
+        badges: ['O3C', ...(o3cModel.capabilities || [])],
       } as Model;
     }
     

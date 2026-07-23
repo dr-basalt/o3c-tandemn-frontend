@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Comprehensive test of all 4 Tandemn models with correct endpoints
+// Comprehensive test of all 4 O3C models with correct endpoints
 const models = [
   {
     name: "DeepSeek R1 Distilled Llama 70B",
@@ -167,7 +167,7 @@ async function testModel(model, testStreaming = false) {
 }
 
 async function runAllTests() {
-  console.log('🚀 Testing All 4 Tandemn Models');
+  console.log('🚀 Testing All 4 O3C Models');
   console.log('=' .repeat(50));
 
   const results = {

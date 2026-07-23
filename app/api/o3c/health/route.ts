@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tandemnClient } from '@/lib/tandemn-client';
+import { o3cClient } from '@/lib/o3c-client';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Checking tandemn backend health...');
+    console.log('Checking o3c backend health...');
 
-    // Get health status from tandemn backend
-    const healthResponse = await tandemnClient.health();
+    // Get health status from o3c backend
+    const healthResponse = await o3cClient.health();
     
     console.log('Health response:', healthResponse);
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Tandemn health check error:', error);
+    console.error('O3C health check error:', error);
     return NextResponse.json(
       { 
         status: 'error',

@@ -9,15 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Copy, Brain, Code, MessageSquare, ExternalLink, Zap } from 'lucide-react';
-import { TandemnModel } from '@/config/models';
+import { O3CModel } from '@/config/models';
 
 interface ModelsClientProps {
-  initialModels: TandemnModel[];
+  initialModels: O3CModel[];
 }
 
 export default function ModelsClient({ initialModels }: ModelsClientProps) {
-  const [models] = useState<TandemnModel[]>(initialModels);
-  const [selectedModel, setSelectedModel] = useState<TandemnModel | null>(
+  const [models] = useState<O3CModel[]>(initialModels);
+  const [selectedModel, setSelectedModel] = useState<O3CModel | null>(
     initialModels.length > 0 ? initialModels[0] : null
   );
 
@@ -50,10 +50,10 @@ export default function ModelsClient({ initialModels }: ModelsClientProps) {
     if (typeof window !== 'undefined') {
       return window.location.origin;
     }
-    return 'https://tandemn-frontend.vercel.app';
+    return 'https://o3c-frontend.vercel.app';
   };
 
-  const generateCurlExample = (model: TandemnModel) => {
+  const generateCurlExample = (model: O3CModel) => {
     const domain = getApiDomain();
     
     const body = {
@@ -81,7 +81,7 @@ ${headerString} \\
 --data '${JSON.stringify(body, null, 2)}'`;
   };
 
-  const generatePythonExample = (model: TandemnModel) => {
+  const generatePythonExample = (model: O3CModel) => {
     const domain = getApiDomain();
     return `import requests
 
@@ -101,7 +101,7 @@ response = requests.post(url, headers=headers, json=data)
 print(response.json())`;
   };
 
-  const generateNodeExample = (model: TandemnModel) => {
+  const generateNodeExample = (model: O3CModel) => {
     const domain = getApiDomain();
     return `const fetch = require('node-fetch');
 

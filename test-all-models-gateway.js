@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Comprehensive test script for all Tandemn models through the API gateway
+ * Comprehensive test script for all O3C models through the API gateway
  * Tests each model with different types of requests to ensure functionality
  */
 
@@ -234,7 +234,7 @@ const testModel = async (model) => {
 };
 
 const main = async () => {
-  console.log('🚀 Starting comprehensive test of all Tandemn models through API gateway');
+  console.log('🚀 Starting comprehensive test of all O3C models through API gateway');
   console.log(`📡 Testing endpoint: ${API_ENDPOINT}`);
   console.log(`📅 Test started at: ${new Date().toISOString()}`);
   

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAPIKey, getUserCredits, deductCredits, addTransaction } from '@/lib/credits';
 import { getModelById, calculateCost } from '@/config/models';
 import { getModelEndpoint } from '@/config/model-endpoints';
-import { tandemnClient, mapModelToOpenRouter } from '@/lib/tandemn-client';
+import { o3cClient, mapModelToOpenRouter } from '@/lib/o3c-client';
 import { openRouterClient } from '@/lib/openrouter-client';
 
 3// CORS headers
@@ -153,19 +153,19 @@ export async function POST(request: NextRequest) {
 
     let actualInputTokens = estimatedInputTokens;
     let actualOutputTokens = 0;
-    let backendUsed = 'tandemn';
+    let backendUsed = 'o3c';
     let responseContent = '';
     
     try {
-      // Try Tandemn backend first with model-specific defaults (capped at 2000)
-      const tandemnRequest = {
+      // Try O3C backend first with model-specific defaults (capped at 2000)
+      const o3cRequest = {
         model_name: model,
         input_text: JSON.stringify(backendMessages),
         max_tokens: maxTokens,
         messages: backendMessages,
       };
 
-      console.log('🔧 Trying Tandemn backend for model:', model);
+      console.log('🔧 Trying O3C backend for model:', model);
 
       if (stream) {
         // Streaming response with fallback logic and proper abort handling
@@ -192,9 +192,9 @@ export async function POST(request: NextRequest) {
             };
             
             try {
-              // Try Tandemn first - 6 second bailout
-              const tandemnResponse = await tandemnClient.inferStreamingWithTimeout(
-                tandemnRequest, 
+              // Try O3C first - 6 second bailout
+              const o3cResponse = await o3cClient.inferStreamingWithTimeout(
+                o3cRequest, 
                 (content: string) => {
                   if (!streamActive || streamController.signal.aborted) return;
                   
@@ -217,21 +217,21 @@ export async function POST(request: NextRequest) {
                   safeEnqueue(encoder.encode(chunkLine));
                 },
                 600000, // 10 minute max (no artificial timeout)
-                streamController.signal // Pass abort signal to tandem client
+                streamController.signal // Pass abort signal to o3c client
               );
               
-              if (tandemnResponse && tandemnResponse.result && streamActive) {
+              if (o3cResponse && o3cResponse.result && streamActive) {
                 actualOutputTokens = Math.ceil(responseContent.length / 4);
-                backendUsed = 'tandemn';
-                console.log('✅ Tandemn streaming successful');
+                backendUsed = 'o3c';
+                console.log('✅ O3C streaming successful');
               }
-            } catch (tandemnError) {
+            } catch (o3cError) {
               if (streamController.signal.aborted) {
                 console.log('🛑 Stream was cancelled by client');
                 return; // Don't fallback if user cancelled
               }
               
-              console.error('❌ Tandemn failed, falling back to OpenRouter:', tandemnError);
+              console.error('❌ O3C failed, falling back to OpenRouter:', o3cError);
               
               // Fallback to OpenRouter only if stream is still active
               if (streamActive) {
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
                   console.log('✅ OpenRouter streaming fallback successful (REAL streaming)');
                 } catch (fallbackError) {
                   if (!streamController.signal.aborted) {
-                    console.error('❌ Both Tandemn and OpenRouter failed:', fallbackError);
+                    console.error('❌ Both O3C and OpenRouter failed:', fallbackError);
                     controller.error(fallbackError);
                   }
                   return;
@@ -328,17 +328,17 @@ export async function POST(request: NextRequest) {
       } else {
         // Non-streaming response with fallback logic - NO EXPLICIT TIMEOUTS
         try {
-          // Try Tandemn first - let bailout logic handle timeouts naturally  
-          const tandemnResponse = await tandemnClient.inferWithTimeout(tandemnRequest, 600000); // 10 minutes max
+          // Try O3C first - let bailout logic handle timeouts naturally  
+          const o3cResponse = await o3cClient.inferWithTimeout(o3cRequest, 600000); // 10 minutes max
           
-          if (tandemnResponse && tandemnResponse.result) {
-            responseContent = tandemnResponse.result;
+          if (o3cResponse && o3cResponse.result) {
+            responseContent = o3cResponse.result;
             actualOutputTokens = Math.ceil(responseContent.length / 4);
-            backendUsed = 'tandemn';
-            console.log('✅ Tandemn non-streaming successful');
+            backendUsed = 'o3c';
+            console.log('✅ O3C non-streaming successful');
           }
-        } catch (tandemnError) {
-          console.error('❌ Tandemn failed, falling back to OpenRouter:', tandemnError);
+        } catch (o3cError) {
+          console.error('❌ O3C failed, falling back to OpenRouter:', o3cError);
           
           // Fallback to OpenRouter
           try {
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest) {
               console.log('✅ OpenRouter non-streaming fallback successful');
             }
           } catch (fallbackError) {
-            console.error('❌ Both Tandemn and OpenRouter failed:', fallbackError);
+            console.error('❌ Both O3C and OpenRouter failed:', fallbackError);
             return NextResponse.json(
               { error: 'Both primary and fallback services failed' },
               { status: 502, headers: corsHeaders }
@@ -421,7 +421,7 @@ export async function POST(request: NextRequest) {
             completion_tokens: actualOutputTokens,
             total_tokens: totalTokens,
           },
-          // Tandemn-specific billing info
+          // O3C-specific billing info
           billing: {
             credits_charged: actualCost,
             credits_remaining: userBalance - actualCost,

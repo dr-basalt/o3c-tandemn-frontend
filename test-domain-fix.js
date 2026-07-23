@@ -25,7 +25,7 @@ function generateCurlExample(model) {
 }
 
 function getDomain() {
-  return 'https://tandemn-frontend.vercel.app';
+  return 'https://o3c-frontend.vercel.app';
 }
 
 // Test the function
@@ -34,7 +34,7 @@ try {
     id: 'casperhansen/llama-3.3-70b-instruct-awq' 
   });
   
-  if (result.includes('https://tandemn-frontend.vercel.app')) {
+  if (result.includes('https://o3c-frontend.vercel.app')) {
     console.log('✅ Domain initialization fixed successfully!');
     console.log('📝 Generated curl:', result);
     console.log('\n🎉 The models page should now work without ReferenceError');

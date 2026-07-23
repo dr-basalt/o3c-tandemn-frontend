@@ -16,7 +16,7 @@ export interface IMessage extends Document {
     cost: number;
   };
   metadata?: {
-    backend?: 'tandemn' | 'openrouter' | 'mock';
+    backend?: 'o3c' | 'openrouter' | 'mock';
     processingTime?: number;
     temperature?: number;
     maxTokens?: number;
@@ -64,7 +64,7 @@ const MessageSchema = new Schema<IMessage>({
   metadata: {
     backend: {
       type: String,
-      enum: ['tandemn', 'openrouter', 'mock'],
+      enum: ['o3c', 'openrouter', 'mock'],
     },
     processingTime: Number,
     temperature: Number,

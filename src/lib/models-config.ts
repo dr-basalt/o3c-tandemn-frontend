@@ -19,11 +19,11 @@ export interface ModelConfig {
   openRouterModelId: string; // Mapping to OpenRouter
 }
 
-// Tandem-only model configurations - ACTUALLY DEPLOYED MODELS ONLY
+// O3C-only model configurations - ACTUALLY DEPLOYED MODELS ONLY
 export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: 'casperhansen/deepseek-r1-distill-llama-70b-awq',
-    vendor: 'tandem',
+    vendor: 'o3c',
     series: 'DeepSeek',
     name: 'DeepSeek R1 Distill Llama 70B (AWQ)',
     short: 'deepseek-r1-70b-awq',
@@ -34,13 +34,13 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     latencyMs: 800,
     weeklyGrowthPct: 28.0,
     modalities: ['text'],
-    description: 'DeepSeek\'s reasoning model with thinking capability, optimized for Tandemn infrastructure.',
-    badges: ['Tandem', 'Thinking', 'Reasoning'],
+    description: 'DeepSeek\'s reasoning model with thinking capability, optimized for O3C infrastructure.',
+    badges: ['O3C', 'Thinking', 'Reasoning'],
     openRouterModelId: 'deepseek/deepseek-r1-distill-llama-70b',
   },
   {
     id: 'Qwen/Qwen3-32B-AWQ',
-    vendor: 'tandem',
+    vendor: 'o3c',
     series: 'Qwen',
     name: 'Qwen3 32B (AWQ)',
     short: 'qwen3-32b-awq',
@@ -51,13 +51,13 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     latencyMs: 600,
     weeklyGrowthPct: 25.0,
     modalities: ['text'],
-    description: 'Alibaba\'s Qwen3 model with 32B parameters, optimized for Tandemn infrastructure.',
-    badges: ['Tandem', 'Fast', 'Multilingual'],
+    description: 'Alibaba\'s Qwen3 model with 32B parameters, optimized for O3C infrastructure.',
+    badges: ['O3C', 'Fast', 'Multilingual'],
     openRouterModelId: 'qwen/qwen3-32b',
   },
   {
     id: 'btbtyler09/Devstral-Small-2507-AWQ',
-    vendor: 'tandem',
+    vendor: 'o3c',
     series: 'Devstral',
     name: 'Devstral Small 2507 (AWQ)',
     short: 'devstral-small-2507-awq',
@@ -69,12 +69,12 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     weeklyGrowthPct: 22.0,
     modalities: ['text'],
     description: 'Mistral\'s Devstral model specialized for coding and development tasks.',
-    badges: ['Tandem', 'Coding', 'Efficient'],
+    badges: ['O3C', 'Coding', 'Efficient'],
     openRouterModelId: 'mistralai/devstral-small-2505',
   },
   {
     id: 'casperhansen/llama-3.3-70b-instruct-awq',
-    vendor: 'tandem',
+    vendor: 'o3c',
     series: 'Llama',
     name: 'Llama 3.3 70B Instruct (AWQ)',
     short: 'llama-3.3-70b-awq',
@@ -85,8 +85,8 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     latencyMs: 800,
     weeklyGrowthPct: 25.5,
     modalities: ['text'],
-    description: 'Meta\'s latest Llama model optimized for Tandem infrastructure with AWQ quantization.',
-    badges: ['Tandem', 'Fast'],
+    description: 'Meta\'s latest Llama model optimized for O3C infrastructure with AWQ quantization.',
+    badges: ['O3C', 'Fast'],
     openRouterModelId: 'meta-llama/llama-3.3-70b-instruct',
   },
 ];
@@ -123,14 +123,14 @@ export function getModelById(id: string): Model | undefined {
 }
 
 // Get OpenRouter model ID mapping
-export function getOpenRouterModelId(tandemnModelId: string): string {
-  const config = MODEL_CONFIGS.find(m => m.id === tandemnModelId);
+export function getOpenRouterModelId(o3cModelId: string): string {
+  const config = MODEL_CONFIGS.find(m => m.id === o3cModelId);
   if (config) {
     return config.openRouterModelId;
   }
   
   // Greffon LiteLLM: id inconnu = id gateway direct (pass-through)
-  return tandemnModelId;
+  return o3cModelId;
 }
 
 // Get KPI stats from model data

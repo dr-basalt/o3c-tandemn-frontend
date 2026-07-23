@@ -106,8 +106,8 @@ export async function GET(
                   await completeBatchInferenceTask({
                     taskId,
                     outputFile: {
-                      s3Path: resultsData.s3_path || `s3://tandemn-results/results/${resultsData.filename}`,
-                      s3Bucket: resultsData.s3_bucket || 'tandemn-results',
+                      s3Path: resultsData.s3_path || `s3://o3c-results/results/${resultsData.filename}`,
+                      s3Bucket: resultsData.s3_bucket || 'o3c-results',
                       s3Key: resultsData.s3_key || `results/${resultsData.filename}`,
                       fileSize: resultsData.file_size,
                     },

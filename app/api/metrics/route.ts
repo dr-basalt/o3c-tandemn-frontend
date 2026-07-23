@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const query = {
       userId: searchParams.get('userId') || userId,
       modelId: searchParams.get('modelId') || undefined,
-      backendUsed: searchParams.get('backendUsed') as 'tandemn' | undefined,
+      backendUsed: searchParams.get('backendUsed') as 'o3c' | undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       totalCost: 0,
       averageProcessingTime: 0,
       requestsByBackend: {
-        tandemn: 0,
+        o3c: 0,
       },
       requestsByModel: [],
       dailyStats: [],

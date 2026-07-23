@@ -10,7 +10,7 @@ The `domain` variable was being referenced in the `modelEndpoints` object defini
 
 **Problem Code**:
 ```typescript
-const generateCurlExample = (model: TandemnModel) => {
+const generateCurlExample = (model: O3CModel) => {
   const apiKey = getApiKeyPrefix();
   
   const modelEndpoints = {
@@ -28,7 +28,7 @@ const generateCurlExample = (model: TandemnModel) => {
 
 **Fixed Code**:
 ```typescript
-const generateCurlExample = (model: TandemnModel) => {
+const generateCurlExample = (model: O3CModel) => {
   const apiKey = getApiKeyPrefix();
   const domain = getApiDomain(); // ✅ Moved to top
   

@@ -29,7 +29,7 @@ export type Message = {
   content: string;
   createdAt: string;
   roomId: string;
-  backend?: 'tandemn' | 'openrouter' | 'mock';
+  backend?: 'o3c' | 'openrouter' | 'mock';
 };
 
 export type KPIStats = {

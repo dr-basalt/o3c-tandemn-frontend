@@ -5,7 +5,7 @@ import { chatSendSchema } from '@/lib/zod-schemas';
 import { chargeCredits, getUserCredits } from '@/lib/credits';
 import { calculateCost } from '@/config/models';
 import { sleep } from '@/lib/utils';
-import { tandemnClient, mapModelToOpenRouter } from '@/lib/tandemn-client';
+import { o3cClient, mapModelToOpenRouter } from '@/lib/o3c-client';
 import { openRouterClient } from '@/lib/openrouter-client';
 import { ChatResponseService } from '@/lib/services/chatResponseService';
 import { ConversationService } from '@/lib/services/conversationService';
@@ -86,15 +86,15 @@ export async function POST(request: NextRequest) {
     let totalCost = 0;
     let backendUsed = 'mock';
     
-    // Create abort signal that can be passed to the tandem client
+    // Create abort signal that can be passed to the o3c client
     const streamController = new AbortController();
     
     const stream = new ReadableStream({
       async start(controller) {
         
         try {
-          // Try tandemn backend first with real-time streaming
-          const tandemnRequest = {
+          // Try o3c backend first with real-time streaming
+          const o3cRequest = {
             model_name: model.id,
             input_text: conversationText,
             max_tokens: 1024, // Playground uses 1024, API uses 2000
@@ -102,20 +102,20 @@ export async function POST(request: NextRequest) {
           };
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('🔧 API: Trying tandemn backend with streaming for model:', model.id);
+            console.log('🔧 API: Trying o3c backend with streaming for model:', model.id);
           }
           
-          const tandemnResponse = await tandemnClient.inferStreamingWithTimeout(
-            tandemnRequest, 
+          const o3cResponse = await o3cClient.inferStreamingWithTimeout(
+            o3cRequest, 
             (content: string) => {
               // Real-time streaming callback - send content immediately
               response += content;
               const chunkData = { 
                 text: content, 
                 done: false,
-                backend: 'tandemn'
+                backend: 'o3c'
               };
-              console.log('📤 API: Streaming chunk from tandem:', content.slice(0, 50) + '...');
+              console.log('📤 API: Streaming chunk from o3c:', content.slice(0, 50) + '...');
               const chunk = `event: chunk\ndata: ${JSON.stringify(chunkData)}\n\n`;
               
               try {
@@ -123,23 +123,23 @@ export async function POST(request: NextRequest) {
               } catch (error) {
                 // Controller might be closed if client aborted
                 if (error instanceof TypeError && error.message.includes('Controller is already closed')) {
-                  console.log('🛑 API: Client disconnected, stopping tandem stream');
-                  streamController.abort(); // Signal tandem backend to stop
+                  console.log('🛑 API: Client disconnected, stopping o3c stream');
+                  streamController.abort(); // Signal o3c backend to stop
                   return;
                 }
                 throw error;
               }
             },
             30000, // 30 second timeout - fail fast and fallback to OpenRouter
-            streamController.signal // Pass abort signal to tandem client
+            streamController.signal // Pass abort signal to o3c client
           );
           
-          if (tandemnResponse && tandemnResponse.result) {
-            // Use the actual result from the real Tandemn backend
+          if (o3cResponse && o3cResponse.result) {
+            // Use the actual result from the real O3C backend
             outputTokens = Math.ceil(response.length / 4);
-            backendUsed = 'tandemn';
+            backendUsed = 'o3c';
             if (process.env.NODE_ENV === 'development') {
-              console.log('🔧 API: Setting backendUsed to tandemn (real backend)');
+              console.log('🔧 API: Setting backendUsed to o3c (real backend)');
             }
             
             // Calculate tokens and cost
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
                     cost: totalCost,
                   },
                   {
-                    backend: backendUsed as 'tandemn' | 'openrouter' | 'mock',
+                    backend: backendUsed as 'o3c' | 'openrouter' | 'mock',
                     processingTime: Date.now() - startTime,
                   }
                 );
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
                 messageId: newMessage?.id,
                 inputText: conversationText,
                 responseText: response,
-                backendUsed: backendUsed as 'tandemn' | 'openrouter' | 'mock',
+                backendUsed: backendUsed as 'o3c' | 'openrouter' | 'mock',
                 inputTokens,
                 outputTokens,
                 totalTokens,
@@ -246,14 +246,14 @@ export async function POST(request: NextRequest) {
             controller.close();
             return;
           }
-        } catch (tandemnError) {
+        } catch (o3cError) {
           // Check if this is a user cancellation - if so, don't fallback to OpenRouter
-          if (tandemnError instanceof Error && tandemnError.message === 'Request cancelled by user') {
+          if (o3cError instanceof Error && o3cError.message === 'Request cancelled by user') {
             console.log('🛑 API: Request cancelled by user');
             // Just close the stream cleanly without fallback
             const cancelledChunk = `event: chunk\ndata: ${JSON.stringify({ 
               done: true, 
-              backend: 'tandemn',
+              backend: 'o3c',
               cancelled: true 
             })}\n\n`;
             controller.enqueue(encoder.encode(cancelledChunk));
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
           
           if (process.env.NODE_ENV === 'development') {
             console.error('❌ Primary service failed');
-            console.error('Error details:', tandemnError);
+            console.error('Error details:', o3cError);
             console.error('Model attempted:', model.id);
             console.error('Conversation length:', messages.length, 'messages');
           }
@@ -445,7 +445,7 @@ export async function POST(request: NextRequest) {
             
             // Send generic error through the stream
             const errorChunk = `event: chunk\ndata: ${JSON.stringify({ 
-              error: `Service temporarily unavailable. Both Tandemn and OpenRouter are down. Please try again in a moment.`,
+              error: `Service temporarily unavailable. Both O3C and OpenRouter are down. Please try again in a moment.`,
               done: true
             })}\n\n`;
             controller.enqueue(encoder.encode(errorChunk));

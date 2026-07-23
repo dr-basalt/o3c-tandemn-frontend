@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Server, Zap } from 'lucide-react';
 
 interface BackendIndicatorProps {
-  backend: 'tandemn' | 'openrouter' | 'mock';
+  backend: 'o3c' | 'openrouter' | 'mock';
   className?: string;
 }
 
@@ -29,7 +29,7 @@ export function BackendIndicator({ backend, className = '' }: BackendIndicatorPr
       ) : (
         <>
           <Server className="h-3 w-3 mr-1" />
-          Tandemn
+          O3C
         </>
       )}
     </Badge>

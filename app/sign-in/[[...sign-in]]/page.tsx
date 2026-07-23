@@ -5,7 +5,7 @@ export default function Page() {
     <div 
       className="min-h-screen flex bg-black relative"
       style={{
-        backgroundImage: "url('/send_tandemn_back_hetarth.png')",
+        backgroundImage: "url('/send_o3c_back_hetarth.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
@@ -19,7 +19,7 @@ export default function Page() {
         <div className="max-w-4xl">
           <img 
             src="/cute-logo.png" 
-            alt="Tandemn AI Platform" 
+            alt="O3C AI Platform" 
             className="w-[32rem] h-[32rem] object-contain mx-auto gentle-float drop-shadow-2xl"
           />
         </div>

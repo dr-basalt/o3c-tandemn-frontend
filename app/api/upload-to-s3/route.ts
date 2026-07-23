@@ -11,7 +11,7 @@ const s3Client = new S3Client({
   },
 });
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'tandemn-batched-requests';
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'o3c-batched-requests';
 
 export async function POST(request: NextRequest) {
   try {

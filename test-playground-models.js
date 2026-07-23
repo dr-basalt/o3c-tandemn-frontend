@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Test both model APIs to ensure they only show our 4 Tandemn models
+// Test both model APIs to ensure they only show our 4 O3C models
 const API_BASE = 'http://localhost:3002';  // Adjust port if needed
 
 async function testModelAPI(endpoint, name) {
@@ -68,7 +68,7 @@ async function checkServerHealth() {
 
 async function runPlaygroundModelTests() {
   console.log('🎮 Testing Playground Model APIs...\n');
-  console.log('Expected: Only 3 Tandemn models (Llama disabled)');
+  console.log('Expected: Only 3 O3C models (Llama disabled)');
   console.log('- casperhansen/deepseek-r1-distill-llama-70b-awq');
   console.log('- Qwen/Qwen3-32B-AWQ');
   console.log('- btbtyler09/Devstral-Small-2507-AWQ');
@@ -95,14 +95,14 @@ async function runPlaygroundModelTests() {
   console.log('=================================');
   
   for (const [name, success] of Object.entries(results)) {
-    const status = success ? '✅ SHOWING ONLY TANDEMN MODELS' : '❌ STILL SHOWING OTHER MODELS';
+    const status = success ? '✅ SHOWING ONLY O3C MODELS' : '❌ STILL SHOWING OTHER MODELS';
     console.log(`${status} ${name}`);
   }
   
   const allGood = Object.values(results).every(Boolean);
   
   if (allGood) {
-    console.log('\n🎉 Perfect! Playground now shows only your 4 Tandemn models!');
+    console.log('\n🎉 Perfect! Playground now shows only your 4 O3C models!');
     process.exit(0);
   } else {
     console.log('\n⚠️  Some APIs still need attention');

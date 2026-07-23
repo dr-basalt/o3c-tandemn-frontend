@@ -19,7 +19,7 @@ export interface IUserTransaction extends Document {
     outputTokens?: number;
     totalTokens?: number;
     cost?: number;
-    backend?: 'tandemn' | 'openrouter' | 'mock';
+    backend?: 'o3c' | 'openrouter' | 'mock';
     processingTime?: number;
   };
   createdAt: Date;
@@ -75,7 +75,7 @@ const UserTransactionSchema = new Schema<IUserTransaction>({
     cost: Number,
     backend: {
       type: String,
-      enum: ['tandemn', 'openrouter', 'mock'],
+      enum: ['o3c', 'openrouter', 'mock'],
     },
     processingTime: Number,
   },

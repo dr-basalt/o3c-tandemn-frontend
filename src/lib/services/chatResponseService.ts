@@ -8,7 +8,7 @@ export interface CreateChatResponseData {
   messageId?: string;
   inputText: string;
   responseText: string;
-  backendUsed: 'tandemn' | 'openrouter' | 'mock';
+  backendUsed: 'o3c' | 'openrouter' | 'mock';
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -27,7 +27,7 @@ export interface CreateChatResponseData {
 export interface MetricsQuery {
   userId?: string;
   modelId?: string;
-  backendUsed?: 'tandemn' | 'openrouter' | 'mock';
+  backendUsed?: 'o3c' | 'openrouter' | 'mock';
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -40,7 +40,7 @@ export interface MetricsSummary {
   totalCost: number;
   averageProcessingTime: number;
   requestsByBackend: {
-    tandemn: number;
+    o3c: number;
     openrouter: number;
     mock: number;
   };
@@ -179,7 +179,7 @@ export class ChatResponseService {
     };
 
     const requestsByBackend = {
-      tandemn: 0,
+      o3c: 0,
       openrouter: 0,
       mock: 0,
     };

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test the Llama model using the production API that you showed works
-const API_BASE = 'https://tandemn-frontend-psi.vercel.app';
+const API_BASE = 'https://o3c-frontend-psi.vercel.app';
 const API_KEY = 'gk-mLMITDrP_3ewsnz1nmzz';
 
 async function testProductionLlama() {

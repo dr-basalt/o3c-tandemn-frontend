@@ -6,7 +6,7 @@ import { Zap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FallbackNotificationProps {
-  backend: 'tandemn' | 'openrouter' | 'mock';
+  backend: 'o3c' | 'openrouter' | 'mock';
   onDismiss?: () => void;
 }
 
@@ -31,8 +31,8 @@ export function FallbackNotification({ backend, onDismiss }: FallbackNotificatio
     }
   }, [backend, onDismiss, isDevelopment]);
   
-  // Don't render if backend is tandemn (primary system) or if notification should be hidden
-  if (backend === 'tandemn' || !isDevelopment || !isVisible || (backend !== 'openrouter' && backend !== 'mock')) {
+  // Don't render if backend is o3c (primary system) or if notification should be hidden
+  if (backend === 'o3c' || !isDevelopment || !isVisible || (backend !== 'openrouter' && backend !== 'mock')) {
     return null;
   }
 
@@ -52,7 +52,7 @@ export function FallbackNotification({ backend, onDismiss }: FallbackNotificatio
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-orange-600" />
             <span className="text-orange-900 text-sm font-medium">
-              <strong>⚠️ Fallback Mode:</strong> Your tandemn backend is unavailable. 
+              <strong>⚠️ Fallback Mode:</strong> Your o3c backend is unavailable. 
               {getFallbackMessage()}
             </span>
           </div>

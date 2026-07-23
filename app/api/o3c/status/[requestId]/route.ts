@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tandemnClient } from '@/lib/tandemn-client';
+import { o3cClient } from '@/lib/o3c-client';
 
 export async function GET(
   request: NextRequest,
@@ -17,8 +17,8 @@ export async function GET(
 
     console.log('Checking status for request:', requestId);
 
-    // Get the inference status from tandemn backend
-    const statusResponse = await tandemnClient.getInferenceStatus(requestId);
+    // Get the inference status from o3c backend
+    const statusResponse = await o3cClient.getInferenceStatus(requestId);
     
     console.log('Status response:', statusResponse);
 
@@ -30,7 +30,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Tandemn status check error:', error);
+    console.error('O3C status check error:', error);
     return NextResponse.json(
       { error: `Status check failed: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }

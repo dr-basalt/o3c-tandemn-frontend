@@ -24,7 +24,7 @@ interface HealthResponse {
   timestamp: string;
 }
 
-export function TandemnHealth() {
+export function O3CHealth() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function TandemnHealth() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/tandemn/health');
+      const response = await fetch('/api/o3c/health');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -70,7 +70,7 @@ export function TandemnHealth() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="h-5 w-5" />
-            Tandemn Backend Status
+            O3C Backend Status
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -91,7 +91,7 @@ export function TandemnHealth() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Server className="h-5 w-5" />
-          Tandemn Backend Status
+          O3C Backend Status
           <Button onClick={fetchHealth} disabled={loading} size="sm" variant="ghost">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>

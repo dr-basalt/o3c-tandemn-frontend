@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tandemnClient } from '@/lib/tandemn-client';
+import { o3cClient } from '@/lib/o3c-client';
 import { openRouterClient } from '@/lib/openrouter-client';
 
 export async function POST(request: NextRequest) {
@@ -15,37 +15,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert the chat format to tandemn format
+    // Convert the chat format to o3c format
     const lastMessage = messages[messages.length - 1];
     const inputText = lastMessage.content;
 
-    // Start inference with tandemn backend
+    // Start inference with o3c backend
     const inferenceRequest = {
       model_name: model,
       input_text: inputText,
       max_tokens: max_tokens,
     };
 
-    console.log('Starting tandemn inference:', inferenceRequest);
+    console.log('Starting o3c inference:', inferenceRequest);
 
-    let tandemnResponse: any = null;
-    let tandemnError: string | null = null;
+    let o3cResponse: any = null;
+    let o3cError: string | null = null;
 
-    // Try tandemn backend first with timeout
+    // Try o3c backend first with timeout
     try {
-      tandemnResponse = await tandemnClient.inferWithTimeout(inferenceRequest, 10000); // 10 second timeout
-      console.log('Tandemn inference started:', tandemnResponse);
+      o3cResponse = await o3cClient.inferWithTimeout(inferenceRequest, 10000); // 10 second timeout
+      console.log('O3C inference started:', o3cResponse);
     } catch (error) {
-      tandemnError = error instanceof Error ? error.message : 'Unknown tandemn error';
-      console.warn('Tandemn inference failed, falling back to OpenRouter:', tandemnError);
+      o3cError = error instanceof Error ? error.message : 'Unknown o3c error';
+      console.warn('O3C inference failed, falling back to OpenRouter:', o3cError);
     }
 
-    // If tandemn failed or timed out, try OpenRouter
-    if (!tandemnResponse) {
+    // If o3c failed or timed out, try OpenRouter
+    if (!o3cResponse) {
       try {
         console.log('Falling back to OpenRouter API...');
         
-        // Map tandemn model names to OpenRouter model names if needed
+        // Map o3c model names to OpenRouter model names if needed
         const openRouterModel = mapModelToOpenRouter(model);
         
         const openRouterRequest = {
@@ -63,19 +63,19 @@ export async function POST(request: NextRequest) {
         });
 
       } catch (openRouterError) {
-        console.error('Both tandemn and OpenRouter failed:', { tandemnError, openRouterError });
+        console.error('Both o3c and OpenRouter failed:', { o3cError, openRouterError });
         return NextResponse.json(
           { 
-            error: `All inference methods failed. Tandemn: ${tandemnError}. OpenRouter: ${openRouterError instanceof Error ? openRouterError.message : 'Unknown error'}` 
+            error: `All inference methods failed. O3C: ${o3cError}. OpenRouter: ${openRouterError instanceof Error ? openRouterError.message : 'Unknown error'}` 
           },
           { status: 500 }
         );
       }
     }
 
-    // If tandemn succeeded, return the response (you'll need to implement polling for actual results)
+    // If o3c succeeded, return the response (you'll need to implement polling for actual results)
     return NextResponse.json({
-      id: tandemnResponse.request_id,
+      id: o3cResponse.request_id,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
       model: model,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           index: 0,
           message: {
             role: 'assistant',
-            content: `Inference started with request ID: ${tandemnResponse.request_id}. This is a placeholder response - you'll need to implement polling for the actual result.`,
+            content: `Inference started with request ID: ${o3cResponse.request_id}. This is a placeholder response - you'll need to implement polling for the actual result.`,
           },
           finish_reason: 'stop',
         },
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         completion_tokens: 0,
         total_tokens: 0,
       },
-      _fallback: 'tandemn', // Flag to indicate this was tandemn
+      _fallback: 'o3c', // Flag to indicate this was o3c
     });
 
   } catch (error) {
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to map tandemn model names to OpenRouter model names
-function mapModelToOpenRouter(tandemnModel: string): string {
+// Helper function to map o3c model names to OpenRouter model names
+function mapModelToOpenRouter(o3cModel: string): string {
   // Add mappings as needed - for now, return the same name
   const modelMappings: Record<string, string> = {
     // Example mappings:
@@ -115,5 +115,5 @@ function mapModelToOpenRouter(tandemnModel: string): string {
     // 'gemma-2b': 'google/gemma-2b',
   };
 
-  return modelMappings[tandemnModel] || tandemnModel;
+  return modelMappings[o3cModel] || o3cModel;
 }

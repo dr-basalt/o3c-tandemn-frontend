@@ -10,7 +10,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* sont inlinés au build (client bundle). pk Clerk = publique.
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_DOMAIN="https://tandemn.ori3com.cloud"
+ARG NEXT_PUBLIC_DOMAIN="https://platform.ori3com.cloud"
 ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY \
     NEXT_PUBLIC_DOMAIN=$NEXT_PUBLIC_DOMAIN \

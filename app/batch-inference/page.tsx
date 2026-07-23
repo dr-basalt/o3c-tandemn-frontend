@@ -59,7 +59,7 @@ export default function BatchInferencePage() {
   const [presencePenalty, setPresencePenalty] = useState<number | undefined>(undefined);
   const [stopSequences, setStopSequences] = useState<string>('');
   const [columnName, setColumnName] = useState('prompt');
-  const [saveResultsPath, setSaveResultsPath] = useState('s3://tandemn-results/');
+  const [saveResultsPath, setSaveResultsPath] = useState('s3://o3c-results/');
   const [maxBufferSize, setMaxBufferSize] = useState(1000);
   const [minBufferSize, setMinBufferSize] = useState(500);
   
@@ -900,7 +900,7 @@ export default function BatchInferencePage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Results Save Path</label>
                 <Input
-                  placeholder="s3://tandemn-results/my-project/"
+                  placeholder="s3://o3c-results/my-project/"
                   value={saveResultsPath}
                   onChange={(e) => setSaveResultsPath(e.target.value)}
                 />

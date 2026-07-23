@@ -49,8 +49,8 @@ export class OpenRouterClient {
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://tandemn.ai', // Replace with your domain
-        'X-Title': 'Tandemn Frontend',
+        'HTTP-Referer': 'https://o3c.ai', // Replace with your domain
+        'X-Title': 'O3C Frontend',
       },
       body: JSON.stringify(request),
     });
@@ -76,8 +76,8 @@ export class OpenRouterClient {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://tandemn.ai',
-          'X-Title': 'Tandemn Frontend',
+          'HTTP-Referer': 'https://o3c.ai',
+          'X-Title': 'O3C Frontend',
         },
         body: JSON.stringify(request),
         signal: controller.signal,
@@ -116,8 +116,8 @@ export class OpenRouterClient {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://tandemn.ai',
-          'X-Title': 'Tandemn Frontend',
+          'HTTP-Referer': 'https://o3c.ai',
+          'X-Title': 'O3C Frontend',
         },
         body: JSON.stringify(streamingRequest),
         signal: controller.signal,

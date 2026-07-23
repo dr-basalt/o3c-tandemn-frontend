@@ -60,7 +60,7 @@ export interface StreamingChatCompletionChunk {
 }
 
 const OPENROUTER_API_BASE_URL = process.env.OPENROUTER_API_BASE_URL || 'https://openrouter.ai/api/v1';
-const TANDEM_API_BASE_URL = 'http://34.207.103.140:8000/v1';
+const O3C_API_BASE_URL = 'http://34.207.103.140:8000/v1';
 
 export class ExternalChatAPI {
   private baseUrl: string;
@@ -247,9 +247,9 @@ export const externalChatAPI = new ExternalChatAPI(
   process.env.OPENROUTER_API_KEY
 );
 
-// Tandem instance - uses the new Tandem API endpoint
-export const tandemChatAPI = new ExternalChatAPI(
-  TANDEM_API_BASE_URL
+// O3C instance - uses the new O3C API endpoint
+export const o3cChatAPI = new ExternalChatAPI(
+  O3C_API_BASE_URL
 );
 
 // Helper function to convert internal message format to external format

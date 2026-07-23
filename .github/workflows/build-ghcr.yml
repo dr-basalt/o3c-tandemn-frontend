@@ -21,7 +21,7 @@ jobs:
           push: true
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-            NEXT_PUBLIC_DOMAIN=https://tandemn.ori3com.cloud
+            NEXT_PUBLIC_DOMAIN=https://platform.ori3com.cloud
           tags: |
-            ghcr.io/dr-basalt/tandemn-frontend:prod-${{ github.sha }}
-            ghcr.io/dr-basalt/tandemn-frontend:latest
+            ghcr.io/dr-basalt/o3c-frontend:prod-${{ github.sha }}
+            ghcr.io/dr-basalt/o3c-frontend:latest

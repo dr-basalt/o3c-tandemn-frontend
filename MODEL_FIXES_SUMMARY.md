@@ -34,7 +34,7 @@
 
 - **Llama 70B**: Not deployed yet (disabled for now)
 
-### 3. Enhanced TandemnClient (`src/lib/tandemn-client.ts`)
+### 3. Enhanced O3CClient (`src/lib/o3c-client.ts`)
 - Updated to use specific model endpoints instead of single backend URL
 - Added support for model-specific system prompts
 - Proper parameter passing (temperature, top_k, top_p, min_p, max_completion_tokens)
@@ -69,7 +69,7 @@
 ### Core Configuration Files
 - `src/config/models.ts` - Updated model definitions
 - `src/config/model-endpoints.ts` - **NEW**: Endpoint configurations
-- `src/lib/tandemn-client.ts` - Enhanced client with proper routing
+- `src/lib/o3c-client.ts` - Enhanced client with proper routing
 - `app/api/v1/chat/route.ts` - Added streaming support
 
 ### Test Files Created

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://choprahetarth:helloworld@demo-day.tjaxr2t.mongodb.net/iroh_tandemn?retryWrites=true&w=majority&appName=demo-day';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://choprahetarth:helloworld@demo-day.tjaxr2t.mongodb.net/iroh_o3c?retryWrites=true&w=majority&appName=demo-day';
 
 interface CachedConnection {
   conn: typeof mongoose | null;

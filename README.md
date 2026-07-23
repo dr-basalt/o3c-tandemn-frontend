@@ -216,4 +216,4 @@ Before deploying:
 ## License
 
 MIT License - feel free to use this as a starting point for your own projects.
-# tandemn-frontend
+# o3c-frontend

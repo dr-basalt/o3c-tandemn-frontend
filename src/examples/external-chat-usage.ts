@@ -1,7 +1,7 @@
-import { externalChatAPI, tandemChatAPI, convertMessages, ExternalChatAPI } from '@/lib/external-chat-api';
+import { externalChatAPI, o3cChatAPI, convertMessages, ExternalChatAPI } from '@/lib/external-chat-api';
 
 // Example usage of the fallback chat API
-// This will try Tandem first, then fallback to OpenRouter if needed
+// This will try O3C first, then fallback to OpenRouter if needed
 
 export async function basicChatExample() {
   try {
@@ -64,9 +64,9 @@ export async function streamingChatExample() {
   }
 }
 
-// *** RECOMMENDED: Use the fallback API route (tries Tandem first, then OpenRouter) ***
+// *** RECOMMENDED: Use the fallback API route (tries O3C first, then OpenRouter) ***
 
-// Example usage with fallback API route - tries Tandem first, then OpenRouter
+// Example usage with fallback API route - tries O3C first, then OpenRouter
 export async function useFallbackAPIRoute(apiKey: string) {
   try {
     const response = await fetch('/api/v1/external-chat', {
@@ -76,7 +76,7 @@ export async function useFallbackAPIRoute(apiKey: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'casperhansen/llama-3.3-70b-instruct-awq', // This will be used for Tandem (OpenRouter uses different model)
+        model: 'casperhansen/llama-3.3-70b-instruct-awq', // This will be used for O3C (OpenRouter uses different model)
         stream: false,
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Be concise and clear in your responses.' },
@@ -202,10 +202,10 @@ export async function demonstrateFallbackBehavior(apiKey: string) {
   try {
     const result = await useFallbackAPIRoute(apiKey);
     
-    if (result.processing_source === 'tandem') {
-      console.log('✅ Success: Tandem internal system handled the request');
+    if (result.processing_source === 'o3c') {
+      console.log('✅ Success: O3C internal system handled the request');
     } else if (result.processing_source === 'openrouter') {
-      console.log('🔄 Fallback: OpenRouter handled the request after Tandem failed');
+      console.log('🔄 Fallback: OpenRouter handled the request after O3C failed');
     }
     
     console.log(`Credits charged: $${result.pricing?.credits_charged || 'unknown'}`);

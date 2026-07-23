@@ -2,26 +2,26 @@ import { openRouterClient } from './openrouter-client';
 import { getOpenRouterModelId } from './models-config';
 import { getModelEndpoint, type ModelEndpointConfig } from '@/config/model-endpoints';
 
-// Helper function to map tandemn model names to OpenRouter model names
-export function mapModelToOpenRouter(tandemnModel: string): string {
-  return getOpenRouterModelId(tandemnModel);
+// Helper function to map o3c model names to OpenRouter model names
+export function mapModelToOpenRouter(o3cModel: string): string {
+  return getOpenRouterModelId(o3cModel);
 }
 
-export interface TandemnInferenceRequest {
+export interface O3CInferenceRequest {
   model_name: string;
   input_text: string;
   max_tokens: number;
   messages?: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>; // Added for conversation support
 }
 
-export interface TandemnInferenceResponse {
+export interface O3CInferenceResponse {
   request_id: string;
   status: string;
   result: string | null;
   processing_time: number | null;
 }
 
-export interface TandemnHealthResponse {
+export interface O3CHealthResponse {
   status: string;
   machines: Array<{
     machine_id: string;
@@ -36,21 +36,21 @@ export interface TandemnHealthResponse {
   }>;
 }
 
-export interface TandemnDeploymentRequest {
+export interface O3CDeploymentRequest {
   model_id: string;
   hf_token?: string;
   qbits?: number;
   filename?: string;
 }
 
-export class TandemnClient {
+export class O3CClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || process.env.TANDEMN_BACKEND_URL || 'http://localhost:8000';
+    this.baseUrl = baseUrl || process.env.O3C_BACKEND_URL || 'http://localhost:8000';
   }
 
-  async health(): Promise<TandemnHealthResponse> {
+  async health(): Promise<O3CHealthResponse> {
     // Health check simulation
     
     // Always return mock health data to avoid connection errors
@@ -58,7 +58,7 @@ export class TandemnClient {
     return {
       status: 'success',
       machines: [{
-        machine_id: 'tandem-backend-mock',
+        machine_id: 'o3c-backend-mock',
         metrics: {
           cpu_percent: 25,
           ram_percent: 65,
@@ -77,7 +77,7 @@ export class TandemnClient {
     };
   }
 
-  async infer(request: TandemnInferenceRequest): Promise<TandemnInferenceResponse> {
+  async infer(request: O3CInferenceRequest): Promise<O3CInferenceResponse> {
     const response = await fetch(`${this.baseUrl}/infer`, {
       method: 'POST',
       headers: {
@@ -95,13 +95,13 @@ export class TandemnClient {
   }
 
   async inferStreamingWithTimeout(
-    request: TandemnInferenceRequest,
+    request: O3CInferenceRequest,
     onChunk: (content: string) => void,
     timeoutMs: number = 60000,
     externalSignal?: AbortSignal // Accept external abort signal
-  ): Promise<TandemnInferenceResponse> {
+  ): Promise<O3CInferenceResponse> {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 TANDEMN: Calling model endpoint for streaming model:', request.model_name);
+      console.log('🔧 O3C: Calling model endpoint for streaming model:', request.model_name);
     }
     
     // Get the specific endpoint configuration for this model
@@ -116,7 +116,7 @@ export class TandemnClient {
     // Listen to external abort signal (from frontend stop button)
     if (externalSignal) {
       externalSignal.addEventListener('abort', () => {
-        console.log('🛑 TANDEMN: External abort signal received');
+        console.log('🛑 O3C: External abort signal received');
         controller.abort();
       });
     }
@@ -141,7 +141,7 @@ export class TandemnClient {
         ];
       }
 
-      // Convert Tandemn request to exact format that works with model API
+      // Convert O3C request to exact format that works with model API
       const apiRequest = {
         model: request.model_name,
         messages: messages,
@@ -167,10 +167,10 @@ export class TandemnClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Tandem backend inference failed: ${response.statusText} - ${errorText}`);
+        throw new Error(`O3C backend inference failed: ${response.statusText} - ${errorText}`);
       }
 
-      // Handle streaming response from Tandem with real-time callbacks
+      // Handle streaming response from O3C with real-time callbacks
       // Connection established, processing stream...
       
       const reader = response.body?.getReader();
@@ -202,9 +202,9 @@ export class TandemnClient {
           // Check if abort was signaled
           if (controller.signal.aborted || externalSignal?.aborted) {
             if (connectionTimeout) clearTimeout(connectionTimeout);
-            console.log('🛑 TANDEMN: Abort signal detected, stopping stream reading');
+            console.log('🛑 O3C: Abort signal detected, stopping stream reading');
             if (!hasReceivedRealContent) {
-              throw new Error('TANDEM_BAILOUT: No real content received, connection timeout');
+              throw new Error('O3C_BAILOUT: No real content received, connection timeout');
             }
             break;
           }
@@ -213,7 +213,7 @@ export class TandemnClient {
           if (hasReceivedRealContent && emptyChunkCount >= 8 && (Date.now() - lastContentTime) > 15000) {
             if (connectionTimeout) clearTimeout(connectionTimeout);
             // Switching to alternative due to connection issues
-            throw new Error('TANDEM_BAILOUT: No real content received');
+            throw new Error('O3C_BAILOUT: No real content received');
           }
           
           const { done, value } = await reader.read();
@@ -229,7 +229,7 @@ export class TandemnClient {
           for (const line of lines) {
             // Check for abort signal again before processing each line
             if (controller.signal.aborted || externalSignal?.aborted) {
-              console.log('🛑 TANDEMN: Abort signal detected during line processing, stopping');
+              console.log('🛑 O3C: Abort signal detected during line processing, stopping');
               break;
             }
             
@@ -237,7 +237,7 @@ export class TandemnClient {
             
             if (trimmedLine === '') continue;
             if (trimmedLine === 'data: [DONE]') {
-              console.log('✅ TANDEMN: Stream completed successfully');
+              console.log('✅ O3C: Stream completed successfully');
               break;
             }
             if (!trimmedLine.startsWith('data: ')) continue;
@@ -261,7 +261,7 @@ export class TandemnClient {
                   if (!hasReceivedRealContent) {
                     hasReceivedRealContent = true;
                     if (connectionTimeout) clearTimeout(connectionTimeout);
-                    console.log('✅ TANDEMN: First real content received, clearing connection timeout');
+                    console.log('✅ O3C: First real content received, clearing connection timeout');
                   }
                   completeContent += filteredContent;
                   onChunk(filteredContent); // Call the streaming callback
@@ -289,11 +289,11 @@ export class TandemnClient {
         reader.releaseLock();
       }
       
-      console.log(`✅ TANDEMN: Stream processing complete. Total content: ${completeContent.length} characters`);
+      console.log(`✅ O3C: Stream processing complete. Total content: ${completeContent.length} characters`);
       
-      // Convert to Tandemn format
-      const result: TandemnInferenceResponse = {
-        request_id: `tandemn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      // Convert to O3C format
+      const result: O3CInferenceResponse = {
+        request_id: `o3c-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         status: 'completed',
         result: completeContent.trim(),
         processing_time: null,
@@ -307,8 +307,8 @@ export class TandemnClient {
           console.log('🛑 Request cancelled by user');
           throw new Error('Request cancelled by user');
         } else {
-          console.log('⏱️ TANDEMN: Request timed out');
-          throw new Error('Tandem backend request timed out');
+          console.log('⏱️ O3C: Request timed out');
+          throw new Error('O3C backend request timed out');
         }
       }
       console.error('❌ Service error:', error);
@@ -317,10 +317,10 @@ export class TandemnClient {
   }
 
   async inferWithTimeout(
-    request: TandemnInferenceRequest, 
+    request: O3CInferenceRequest, 
     timeoutMs: number = 60000
-  ): Promise<TandemnInferenceResponse> {
-    console.log('🔧 TANDEMN: Calling model endpoint for model:', request.model_name);
+  ): Promise<O3CInferenceResponse> {
+    console.log('🔧 O3C: Calling model endpoint for model:', request.model_name);
     
     // Get the specific endpoint configuration for this model
     const modelConfig = getModelEndpoint(request.model_name);
@@ -351,7 +351,7 @@ export class TandemnClient {
         ];
       }
 
-      // Convert Tandemn request to exact format that works with model API
+      // Convert O3C request to exact format that works with model API
       const apiRequest = {
         model: request.model_name,
         messages: messages,
@@ -377,10 +377,10 @@ export class TandemnClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Tandem backend inference failed: ${response.statusText} - ${errorText}`);
+        throw new Error(`O3C backend inference failed: ${response.statusText} - ${errorText}`);
       }
 
-      // Handle streaming response from Tandem properly
+      // Handle streaming response from O3C properly
       // Connection established, processing stream...
       
       const reader = response.body?.getReader();
@@ -413,7 +413,7 @@ export class TandemnClient {
           if (controller.signal.aborted) {
             if (connectionTimeout) clearTimeout(connectionTimeout);
             if (!hasReceivedRealContent) {
-              throw new Error('TANDEM_BAILOUT: No real content received, connection timeout');
+              throw new Error('O3C_BAILOUT: No real content received, connection timeout');
             }
             break;
           }
@@ -422,7 +422,7 @@ export class TandemnClient {
           if (hasReceivedRealContent && emptyChunkCount >= 8 && (Date.now() - lastContentTime) > 15000) {
             if (connectionTimeout) clearTimeout(connectionTimeout);
             // Switching to alternative due to connection issues
-            throw new Error('TANDEM_BAILOUT: No real content received');
+            throw new Error('O3C_BAILOUT: No real content received');
           }
           
           const { done, value } = await reader.read();
@@ -440,7 +440,7 @@ export class TandemnClient {
             
             if (trimmedLine === '') continue;
             if (trimmedLine === 'data: [DONE]') {
-              console.log('✅ TANDEMN: Stream completed successfully');
+              console.log('✅ O3C: Stream completed successfully');
               break;
             }
             if (!trimmedLine.startsWith('data: ')) continue;
@@ -464,12 +464,12 @@ export class TandemnClient {
                   if (!hasReceivedRealContent) {
                     hasReceivedRealContent = true;
                     if (connectionTimeout) clearTimeout(connectionTimeout);
-                    console.log('✅ TANDEMN: First real content received, clearing connection timeout');
+                    console.log('✅ O3C: First real content received, clearing connection timeout');
                   }
                   completeContent += filteredContent;
                   // Log progress for debugging
                   if (completeContent.length % 100 === 0) {
-                    console.log(`📝 TANDEMN: Received ${completeContent.length} characters so far...`);
+                    console.log(`📝 O3C: Received ${completeContent.length} characters so far...`);
                   }
                 } else {
                   emptyChunkCount++;
@@ -490,7 +490,7 @@ export class TandemnClient {
         reader.releaseLock();
       }
       
-      console.log(`✅ TANDEMN: Stream processing complete. Total content: ${completeContent.length} characters`);
+      console.log(`✅ O3C: Stream processing complete. Total content: ${completeContent.length} characters`);
       
       // Filter out end-of-text tokens
       completeContent = completeContent
@@ -501,9 +501,9 @@ export class TandemnClient {
         .replace(/<｜end▁of▁sentence｜>/g, '')
         .trim();
       
-      // Convert to Tandemn format
-      const result: TandemnInferenceResponse = {
-        request_id: `tandemn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      // Convert to O3C format
+      const result: O3CInferenceResponse = {
+        request_id: `o3c-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         status: 'completed',
         result: completeContent || null,
         processing_time: null,
@@ -513,14 +513,14 @@ export class TandemnClient {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Tandem backend request timed out');
+        throw new Error('O3C backend request timed out');
       }
       console.error('❌ Service error:', error);
       throw error;
     }
   }
 
-  async getInferenceStatus(requestId: string): Promise<TandemnInferenceResponse> {
+  async getInferenceStatus(requestId: string): Promise<O3CInferenceResponse> {
     const response = await fetch(`${this.baseUrl}/status/${requestId}`);
     if (!response.ok) {
       throw new Error(`Status check failed: ${response.statusText}`);
@@ -528,7 +528,7 @@ export class TandemnClient {
     return response.json();
   }
 
-  async deployModel(request: TandemnDeploymentRequest): Promise<any> {
+  async deployModel(request: O3CDeploymentRequest): Promise<any> {
     const response = await fetch(`${this.baseUrl}/deploy_model`, {
       method: 'POST',
       headers: {
@@ -561,7 +561,7 @@ export class TandemnClient {
     return response.json();
   }
 
-  async estimateModel(request: TandemnDeploymentRequest): Promise<any> {
+  async estimateModel(request: O3CDeploymentRequest): Promise<any> {
     const response = await fetch(`${this.baseUrl}/estimate_model`, {
       method: 'POST',
       headers: {
@@ -580,4 +580,4 @@ export class TandemnClient {
 }
 
 // Create a singleton instance
-export const tandemnClient = new TandemnClient();
+export const o3cClient = new O3CClient();

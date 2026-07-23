@@ -1,8 +1,8 @@
-# Tandemn API Documentation
+# O3C API Documentation
 
 ## Overview
 
-Tandemn provides a unified API for accessing 5 core AI models with token-based pricing. Users are charged per million tokens consumed, with separate pricing for input and output tokens.
+O3C provides a unified API for accessing 5 core AI models with token-based pricing. Users are charged per million tokens consumed, with separate pricing for input and output tokens.
 
 ## Authentication
 
@@ -15,7 +15,7 @@ Authorization: Bearer YOUR_API_KEY
 ## Base URL
 
 ```
-https://api.tandemn.com/v1
+https://api.o3c.com/v1
 ```
 
 ## Core Models
@@ -41,7 +41,7 @@ Generate text completions using AI models.
 #### Request
 
 ```bash
-curl -X POST https://api.tandemn.com/v1/chat/completions \
+curl -X POST https://api.o3c.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -142,7 +142,7 @@ Get all available models and their capabilities.
 #### Request
 
 ```bash
-curl https://api.tandemn.com/v1/models \
+curl https://api.o3c.com/v1/models \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -180,11 +180,11 @@ Get pricing information for models.
 
 ```bash
 # Get all model pricing
-curl https://api.tandemn.com/v1/pricing \
+curl https://api.o3c.com/v1/pricing \
   -H "Authorization: Bearer YOUR_API_KEY"
 
 # Get specific model pricing
-curl https://api.tandemn.com/v1/pricing?model=claude-3-5-sonnet \
+curl https://api.o3c.com/v1/pricing?model=claude-3-5-sonnet \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -217,7 +217,7 @@ Calculate cost for specific token usage.
 #### Request
 
 ```bash
-curl -X POST https://api.tandemn.com/v1/pricing/calculate \
+curl -X POST https://api.o3c.com/v1/pricing/calculate \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -258,7 +258,7 @@ Get current credit balance and usage statistics.
 #### Request
 
 ```bash
-curl https://api.tandemn.com/v1/balance \
+curl https://api.o3c.com/v1/balance \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -450,4 +450,4 @@ You'll need to implement actual API calls to:
 
 ## Support
 
-For API support, contact: api-support@tandemn.com
+For API support, contact: api-support@o3c.com

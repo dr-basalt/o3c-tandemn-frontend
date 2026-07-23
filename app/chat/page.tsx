@@ -27,7 +27,7 @@ import {
   import { ThinkingMode } from '@/components/thinking-mode';
 import { useRoomsStore } from '@/store/rooms';
 import { ChatRoom, Message, Model } from '@/mock/types';
-import { TandemnHealth } from '@/components/tandemn-health';
+import { O3CHealth } from '@/components/o3c-health';
 import { SignInPrompt } from '@/components/sign-in-prompt';
 import { fetchDeployments, getDeployedModelIds } from '@/lib/deployment-utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -994,10 +994,10 @@ function ChatPageContent() {
           </div>
         )}
 
-        {/* Tandemn Health Panel - Hidden on mobile */}
+        {/* O3C Health Panel - Hidden on mobile */}
         {/* {!showGPUUtilization && (
           <div className="w-96 border-l bg-muted/5 p-4 hidden lg:block">
-            <TandemnHealth />
+            <O3CHealth />
           </div>
         )} */}
       </div>

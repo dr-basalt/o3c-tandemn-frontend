@@ -26,7 +26,7 @@ export interface MessageData {
     cost: number;
   };
   metadata?: {
-    backend?: 'tandemn' | 'openrouter' | 'mock';
+    backend?: 'o3c' | 'openrouter' | 'mock';
     processingTime?: number;
     temperature?: number;
     maxTokens?: number;
