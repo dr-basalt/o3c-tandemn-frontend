@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/mock/db';
 import { modelsQuerySchema } from '@/lib/zod-schemas';
 import { sleep } from '@/lib/utils';
+import { fetchLiteLLMModels, filterAndPaginate } from '@/lib/litellm-models';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,8 +27,15 @@ export async function GET(request: NextRequest) {
     // Validate query parameters
     const validatedParams = modelsQuerySchema.parse(queryParams);
     
-    // Get filtered models
-    const result = db.getModels(validatedParams);
+    // Greffon LiteLLM : modeles reels de la gateway O3C ; fallback mock si indispo.
+    let result;
+    try {
+      const live = await fetchLiteLLMModels();
+      result = filterAndPaginate(live, validatedParams);
+    } catch (e) {
+      console.error('LiteLLM models unavailable, fallback mock:', e);
+      result = db.getModels(validatedParams);
+    }
     
     return NextResponse.json(
       {

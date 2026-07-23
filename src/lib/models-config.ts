@@ -129,8 +129,8 @@ export function getOpenRouterModelId(tandemnModelId: string): string {
     return config.openRouterModelId;
   }
   
-  // Default fallback to Llama 3.3 70B (free)
-  return 'meta-llama/llama-3.3-70b-instruct';
+  // Greffon LiteLLM: id inconnu = id gateway direct (pass-through)
+  return tandemnModelId;
 }
 
 // Get KPI stats from model data
