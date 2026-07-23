@@ -1,0 +1,27 @@
+name: Build → GHCR
+on:
+  push:
+    branches: [main, deploy/ori3com]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_DOMAIN=https://tandemn.ori3com.cloud
+          tags: |
+            ghcr.io/dr-basalt/tandemn-frontend:prod-${{ github.sha }}
+            ghcr.io/dr-basalt/tandemn-frontend:latest
