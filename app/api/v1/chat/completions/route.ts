@@ -4,6 +4,11 @@ import { getModelById, getAllModels, calculateCost } from '@/config/models';
 import { getModelEndpoint } from '@/config/model-endpoints';
 import { tandemnClient, mapModelToOpenRouter } from '@/lib/tandemn-client';
 import { OpenRouterClient, openRouterClient } from '@/lib/openrouter-client';
+import { checkRateLimit } from '@/lib/api-rate-limiter';
+
+// 60 requests per minute per user
+const RATE_LIMIT = 60;
+const RATE_WINDOW_SECS = 60;
 
 // CORS headers
 const corsHeaders = {
@@ -43,6 +48,24 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = validation.userId;
+
+    // Rate limit: 60 req/min per user
+    const rl = await checkRateLimit(`rl:chat:${userId}`, RATE_LIMIT, RATE_WINDOW_SECS);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: { message: 'Rate limit exceeded', type: 'rate_limit_error', code: 'rate_limit_exceeded' } },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Retry-After': String(rl.resetAt - Math.floor(Date.now() / 1000)),
+            'X-RateLimit-Limit': String(rl.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rl.resetAt),
+          },
+        }
+      );
+    }
 
     // Resolve user's litellm virtual key for per-user spend tracking
     const userLitellmKey = await getLitellmVirtualKey(userId);
