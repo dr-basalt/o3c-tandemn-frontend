@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Tandemn - Combining Heterogenous GPUs to run AI models',
-  description: 'vRAM goes BRRRR',
+  title: 'O3C Platform - OpenRouter souverain',
+  description: 'Votre gateway IA souveraine propulsée par litellm-o3c',
   icons: {
     icon: '/favicon.png',
   },

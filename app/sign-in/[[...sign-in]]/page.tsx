@@ -19,7 +19,7 @@ export default function Page() {
         <div className="max-w-4xl">
           <img 
             src="/cute-logo.png" 
-            alt="Tandemn AI Platform" 
+            alt="O3C Platform"
             className="w-[32rem] h-[32rem] object-contain mx-auto gentle-float drop-shadow-2xl"
           />
         </div>
