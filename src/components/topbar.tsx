@@ -45,7 +45,7 @@ export function Topbar({ onSearchFocus }: TopbarProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link href="https://platform.ori3com.cloud" className="flex items-center space-x-3 group">
+            <Link href="https://www.ori3com.cloud" className="flex items-center space-x-3 group">
               <img src="/cute-logo-1.png" alt="O3C" className="h-8 w-8" />
               <span className="font-semibold text-lg text-foreground transition-colors hover:text-accent group-hover:text-accent">O3C</span>
             </Link>
