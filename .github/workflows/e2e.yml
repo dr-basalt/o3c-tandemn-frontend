@@ -3,6 +3,9 @@ name: E2E API Tests
 on:
   push:
     branches: [main, master]
+  schedule:
+    # Smoke test toutes les heures — détecte downscaler, crash, OOM
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
