@@ -184,10 +184,12 @@ export async function fetchRealKPIStats() {
   }
 }
 
-// Fetch stats from OpenRouter API
+// Fetch stats from litellm-o3c (replaces external openrouter.ai call)
 async function fetchOpenRouterStats() {
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
+    const baseUrl = process.env.OPENROUTER_API_BASE_URL;
+    if (!baseUrl) throw new Error('OPENROUTER_API_BASE_URL not configured');
+    const response = await fetch(`${baseUrl}/models`, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',

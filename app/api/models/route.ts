@@ -2,37 +2,78 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/mock/db';
 import { modelsQuerySchema } from '@/lib/zod-schemas';
 
+type ModelInfoEntry = {
+  input_cost_per_token?: number;
+  output_cost_per_token?: number;
+  max_tokens?: number;
+  max_input_tokens?: number;
+};
+
+async function fetchModelInfo(base: string, apiKey: string): Promise<Record<string, ModelInfoEntry>> {
+  const modelInfoBase = base.replace(/\/v1$/, '');
+  const res = await fetch(`${modelInfoBase}/model_info`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) return {};
+
+  const data = await res.json();
+  const index: Record<string, ModelInfoEntry> = {};
+  for (const entry of data?.data ?? []) {
+    const id: string | undefined = entry.model_name ?? entry.model_info?.id;
+    if (id && entry.model_info) {
+      index[id] = entry.model_info;
+    }
+  }
+  return index;
+}
+
 async function fetchGatewayModels() {
   const baseUrl = process.env.OPENROUTER_API_BASE_URL;
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!baseUrl || !apiKey) return null;
 
-  const res = await fetch(`${baseUrl}/models`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) return null;
+  const [modelsRes, priceIndex] = await Promise.all([
+    fetch(`${baseUrl}/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      next: { revalidate: 60 },
+    }),
+    fetchModelInfo(baseUrl, apiKey).catch(() => ({})),
+  ]);
 
-  const data = await res.json();
+  if (!modelsRes.ok) return null;
+
+  const data = await modelsRes.json();
   const litellmModels: { id: string; description?: string }[] = data?.data ?? [];
   if (litellmModels.length === 0) return null;
 
-  return litellmModels.map((m) => ({
-    id: m.id,
-    name: m.id,
-    vendor: 'o3c',
-    series: 'Other' as const,
-    short: m.id,
-    context: 128000,
-    promptPrice: 0,
-    completionPrice: 0,
-    tokensPerWeek: 0,
-    latencyMs: 500,
-    weeklyGrowthPct: 0,
-    modalities: ['text'] as ('text')[],
-    description: m.description ?? m.id,
-    badges: ['O3C Gateway'],
-  }));
+  return litellmModels.map((m) => {
+    const info = priceIndex[m.id] ?? {};
+    const promptPrice = info.input_cost_per_token != null
+      ? Number((info.input_cost_per_token * 1_000_000).toFixed(6))
+      : 0;
+    const completionPrice = info.output_cost_per_token != null
+      ? Number((info.output_cost_per_token * 1_000_000).toFixed(6))
+      : 0;
+    const context = info.max_input_tokens ?? info.max_tokens ?? 128000;
+
+    return {
+      id: m.id,
+      name: m.id,
+      vendor: 'o3c',
+      series: 'Other' as const,
+      short: m.id,
+      context,
+      promptPrice,
+      completionPrice,
+      tokensPerWeek: 0,
+      latencyMs: 500,
+      weeklyGrowthPct: 0,
+      modalities: ['text'] as ('text')[],
+      description: m.description ?? m.id,
+      badges: ['O3C Gateway'],
+    };
+  });
 }
 
 export async function GET(request: NextRequest) {
