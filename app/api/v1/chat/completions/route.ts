@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAPIKey, getUserCredits, deductCredits, addTransaction, getLitellmVirtualKey } from '@/lib/credits';
-import { getModelById, calculateCost } from '@/config/models';
+import { getModelById, getAllModels, calculateCost } from '@/config/models';
 import { getModelEndpoint } from '@/config/model-endpoints';
 import { tandemnClient, mapModelToOpenRouter } from '@/lib/tandemn-client';
 import { OpenRouterClient, openRouterClient } from '@/lib/openrouter-client';
@@ -78,58 +78,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the model info
+    // Get the model info — tolère les modèles inconnus (litellm les valide en aval)
     const modelInfo = getModelById(model);
-    if (!modelInfo) {
-      const availableModels = ['casperhansen/deepseek-r1-distill-llama-70b-awq', 'Qwen/Qwen3-32B-AWQ', 'btbtyler09/Devstral-Small-2507-AWQ', 'casperhansen/llama-3.3-70b-instruct-awq'];
+
+    // Branded models (o3c-*) + embedding-pro → routing via litellm (pas de direct endpoint requis)
+    const isLitellmModel = modelInfo?.routing === 'litellm' || model.startsWith('o3c-') || model === 'embedding-pro';
+    const endpointConfig = isLitellmModel ? null : getModelEndpoint(model);
+
+    if (!isLitellmModel && !endpointConfig) {
+      // Modèle inconnu ET pas branded → refuse
+      const availableModels = getAllModels().map(m => m.id);
       return NextResponse.json(
         { error: `Model '${model}' not found. Available models: ${availableModels.join(', ')}` },
         { status: 404, headers: corsHeaders }
       );
     }
 
-    // Get the model endpoint configuration
-    const endpointConfig = getModelEndpoint(model);
-    if (!endpointConfig) {
-      return NextResponse.json(
-        { error: `Model '${model}' is not configured with an endpoint` },
-        { status: 500, headers: corsHeaders }
-      );
-    }
-
-    // Use model-specific chat defaults, allow user to override
-    const modelDefaults = endpointConfig.requestParams;
-    const requestParams = {
-      temperature: body.temperature ?? modelDefaults.temperature,
-      top_p: body.top_p ?? modelDefaults.top_p,
-      top_k: body.top_k ?? modelDefaults.top_k,
-      min_p: body.min_p ?? modelDefaults.min_p,
-      max_completion_tokens: maxTokens, // Always use capped value
-      // Include any other model-specific params (like eos_token_id)
-      ...Object.fromEntries(
-        Object.entries(modelDefaults).filter(([key]) => 
-          !['temperature', 'top_p', 'top_k', 'min_p', 'max_completion_tokens'].includes(key)
-        )
-      )
-    };
-
     // Prepare messages for the backend request
     let backendMessages = [...messages];
-    
+
     // Add system prompt if specified in endpoint config and not already present
-    if (endpointConfig.systemPrompt) {
+    if (endpointConfig?.systemPrompt) {
       const hasSystemMessage = backendMessages.some(msg => msg.role === 'system');
       if (!hasSystemMessage) {
         backendMessages = [{ role: 'system', content: endpointConfig.systemPrompt }, ...backendMessages];
       }
     }
 
+    // Request params — litellm models use simple defaults, direct models use endpoint-specific params
+    const requestParams = endpointConfig
+      ? {
+          temperature: body.temperature ?? endpointConfig.requestParams.temperature,
+          top_p: body.top_p ?? endpointConfig.requestParams.top_p,
+          top_k: body.top_k ?? endpointConfig.requestParams.top_k,
+          min_p: body.min_p ?? endpointConfig.requestParams.min_p,
+          max_completion_tokens: maxTokens,
+          ...Object.fromEntries(
+            Object.entries(endpointConfig.requestParams).filter(([key]) =>
+              !['temperature', 'top_p', 'top_k', 'min_p', 'max_completion_tokens'].includes(key)
+            )
+          ),
+        }
+      : {
+          temperature: body.temperature ?? 0.7,
+          max_tokens: maxTokens,
+        };
+
     // Prepare the request for the backend
     const backendRequest = {
       model: model,
       messages: backendMessages,
       stream: stream,
-      ...requestParams
+      ...requestParams,
     };
 
     // Calculate estimated input tokens for cost calculation (rough estimate: ~4 characters per token)
@@ -138,23 +138,23 @@ export async function POST(request: NextRequest) {
 
     // Check user balance with estimated minimum cost
     const userBalance = await getUserCredits(userId);
-    const minEstimatedCost = calculateCost(model, estimatedInputTokens, 10); // Estimate minimum 10 output tokens
-    
+    const minEstimatedCost = calculateCost(model, estimatedInputTokens, 10);
+
     if (userBalance < minEstimatedCost) {
       return NextResponse.json(
-        { 
+        {
           error: `Insufficient credits. Minimum required: $${minEstimatedCost.toFixed(4)}, Available: $${userBalance.toFixed(4)}`,
           required_credits: minEstimatedCost,
           available_credits: userBalance,
           token_breakdown: {
             estimated_input_tokens: estimatedInputTokens,
             estimated_min_output_tokens: 10,
-            input_price_per_1m: modelInfo.input_price_per_1m,
-            output_price_per_1m: modelInfo.output_price_per_1m,
-            estimated_min_cost: minEstimatedCost
-          }
+            input_price_per_1m: modelInfo?.input_price_per_1m ?? 0.025,
+            output_price_per_1m: modelInfo?.output_price_per_1m ?? 0.07,
+            estimated_min_cost: minEstimatedCost,
+          },
         },
-        { status: 402, headers: corsHeaders } // Payment Required
+        { status: 402, headers: corsHeaders }
       );
     }
 
@@ -198,95 +198,77 @@ export async function POST(request: NextRequest) {
               }
             };
             
-            try {
-              // Try Tandemn first - 6 second bailout
-              const tandemnResponse = await tandemnClient.inferStreamingWithTimeout(
-                tandemnRequest, 
+            const doLitellmStream = async () => {
+              const openRouterRequest = {
+                model: model,
+                messages: backendMessages,
+                max_tokens: maxTokens,
+                temperature: (requestParams as Record<string, unknown>).temperature ?? 0.7,
+                stream: true,
+              };
+              await userOpenRouterClient.chatStreamWithTimeout(
+                openRouterRequest,
                 (content: string) => {
                   if (!streamActive || streamController.signal.aborted) return;
-                  
                   responseContent += content;
-                  
-                  // Send OpenAI-compatible chunk
                   const chunk = {
                     id: `chatcmpl-${Date.now()}`,
                     object: 'chat.completion.chunk',
                     created: Math.floor(Date.now() / 1000),
                     model: model,
-                    choices: [{
-                      index: 0,
-                      delta: {
-                        content: content
-                      }
-                    }]
+                    choices: [{ index: 0, delta: { content } }],
                   };
-                  const chunkLine = `data: ${JSON.stringify(chunk)}\n\n`;
-                  safeEnqueue(encoder.encode(chunkLine));
+                  safeEnqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
                 },
-                600000, // 10 minute max (no artificial timeout)
-                streamController.signal // Pass abort signal to tandem client
+                120000
               );
-              
-              if (tandemnResponse && tandemnResponse.result && streamActive) {
-                actualOutputTokens = Math.ceil(responseContent.length / 4);
-                backendUsed = 'tandemn';
-                console.log('✅ Tandemn streaming successful');
+              actualOutputTokens = Math.ceil(responseContent.length / 4);
+              backendUsed = 'litellm';
+            };
+
+            try {
+              if (isLitellmModel) {
+                // Branded models go directly to litellm — no direct AWS attempt
+                await doLitellmStream();
+                console.log('✅ litellm streaming successful for branded model:', model);
+              } else {
+                // Direct models: try tandemn first, fall back to litellm
+                const tandemnResponse = await tandemnClient.inferStreamingWithTimeout(
+                  tandemnRequest,
+                  (content: string) => {
+                    if (!streamActive || streamController.signal.aborted) return;
+                    responseContent += content;
+                    const chunk = {
+                      id: `chatcmpl-${Date.now()}`,
+                      object: 'chat.completion.chunk',
+                      created: Math.floor(Date.now() / 1000),
+                      model: model,
+                      choices: [{ index: 0, delta: { content } }],
+                    };
+                    safeEnqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+                  },
+                  600000,
+                  streamController.signal
+                );
+                if (tandemnResponse && tandemnResponse.result && streamActive) {
+                  actualOutputTokens = Math.ceil(responseContent.length / 4);
+                  backendUsed = 'tandemn';
+                  console.log('✅ Tandemn streaming successful');
+                }
               }
-            } catch (tandemnError) {
+            } catch (primaryError) {
               if (streamController.signal.aborted) {
                 console.log('🛑 Stream was cancelled by client');
-                return; // Don't fallback if user cancelled
+                return;
               }
-              
-              console.error('❌ Tandemn failed, falling back to OpenRouter:', tandemnError);
-              
-              // Fallback to OpenRouter only if stream is still active
+              console.error('❌ Primary backend failed, falling back to litellm:', primaryError);
               if (streamActive) {
                 try {
-                  const openRouterModel = mapModelToOpenRouter(model);
-                  const openRouterRequest = {
-                    model: openRouterModel,
-                    messages: backendMessages,
-                    max_tokens: maxTokens, // Use user's capped value (max 2000)
-                    temperature: requestParams.temperature,
-                    top_p: requestParams.top_p,
-                    top_k: requestParams.top_k,
-                    min_p: requestParams.min_p
-                  };
-                  
-                  // Use REAL OpenRouter streaming (no more fake streaming!)
-                  await userOpenRouterClient.chatStreamWithTimeout(
-                    openRouterRequest,
-                    (content: string) => {
-                      if (!streamActive || streamController.signal.aborted) return;
-                      
-                      responseContent += content;
-                      
-                      // Send real-time chunk
-                      const chunk = {
-                        id: `chatcmpl-${Date.now()}`,
-                        object: 'chat.completion.chunk', 
-                        created: Math.floor(Date.now() / 1000),
-                        model: model,
-                        choices: [{
-                          index: 0,
-                          delta: {
-                            content: content
-                          }
-                        }]
-                      };
-                      const chunkLine = `data: ${JSON.stringify(chunk)}\n\n`;
-                      safeEnqueue(encoder.encode(chunkLine));
-                    },
-                    60000
-                  );
-                  
-                  actualOutputTokens = Math.ceil(responseContent.length / 4);
-                  backendUsed = 'openrouter';
-                  console.log('✅ OpenRouter streaming fallback successful (REAL streaming)');
+                  await doLitellmStream();
+                  console.log('✅ litellm fallback streaming successful');
                 } catch (fallbackError) {
                   if (!streamController.signal.aborted) {
-                    console.error('❌ Both Tandemn and OpenRouter failed:', fallbackError);
+                    console.error('❌ Both backends failed:', fallbackError);
                     controller.error(fallbackError);
                   }
                   return;
@@ -305,7 +287,7 @@ export async function POST(request: NextRequest) {
               await addTransaction(userId, {
                 type: 'usage_charge',
                 amount: -actualCost,
-                description: `${modelInfo.name} - ${actualInputTokens + actualOutputTokens} tokens (streaming, ${backendUsed})`,
+                description: `${modelInfo?.name ?? model} - ${actualInputTokens + actualOutputTokens} tokens (streaming, ${backendUsed})`,
                 status: 'completed',
                 metadata: {
                   model,
