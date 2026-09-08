@@ -3,6 +3,10 @@ import { getAllModels, TandemnModel } from '@/config/models';
 import ModelsClient from './models-client';
 import ModelsLoading from './loading';
 
+// Force SSR — env vars (OPENROUTER_API_BASE_URL, OPENROUTER_API_KEY) sont
+// injectées par k8s au runtime, pas disponibles au build time CI.
+export const dynamic = 'force-dynamic';
+
 async function fetchLitellmModels(): Promise<TandemnModel[]> {
   const baseUrl = process.env.OPENROUTER_API_BASE_URL;
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -10,7 +14,7 @@ async function fetchLitellmModels(): Promise<TandemnModel[]> {
 
   const res = await fetch(`${baseUrl}/models`, {
     headers: { Authorization: `Bearer ${apiKey}` },
-    next: { revalidate: 60 },
+    cache: 'no-store',
   });
   if (!res.ok) return [];
 
