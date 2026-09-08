@@ -285,8 +285,9 @@ function ChatPageContent() {
     }
   };
 
-  const sendMessage = async (content: string = inputMessage) => {
-    if (!content.trim() || !activeRoomId || !currentModel || isStreaming) return;
+  const sendMessage = async (content: string = inputMessage, overrideRoomId?: string) => {
+    const roomId = overrideRoomId ?? activeRoomId;
+    if (!content.trim() || !roomId || !currentModel || isStreaming) return;
 
     // Check if user has sufficient credits before sending
     if (userCredits <= 0) {
@@ -299,10 +300,10 @@ function ChatPageContent() {
       role: 'user',
       content: content.trim(),
       createdAt: new Date().toISOString(),
-      roomId: activeRoomId,
+      roomId,
     };
 
-    addMessage(activeRoomId, userMessage);
+    addMessage(roomId, userMessage);
     setInputMessage('');
     setIsStreaming(true);
     // GPU panel is always visible now
@@ -313,8 +314,9 @@ function ChatPageContent() {
 
     try {
       // Build conversation history including the new user message
+      const existingMessages = messages[roomId] || [];
       const conversationHistory = [
-        ...roomMessages.map(msg => ({
+        ...existingMessages.map(msg => ({
           role: msg.role,
           content: msg.content
         })),
@@ -326,16 +328,15 @@ function ChatPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           modelId: currentModel.id,
-          roomId: activeRoomId,
+          roomId,
           messages: conversationHistory,
         }),
-        signal: controller.signal, // Add abort signal
+        signal: controller.signal,
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 402) {
-          // Payment Required - insufficient credits
           const requiredCredits = errorData.requiredCredits || 0;
           const currentCredits = errorData.currentCredits || 0;
           throw new Error(`Insufficient credits: Need $${requiredCredits.toFixed(4)} but only have $${currentCredits.toFixed(4)}. Please purchase more credits.`);
@@ -353,10 +354,10 @@ function ChatPageContent() {
         role: 'assistant',
         content: '',
         createdAt: new Date().toISOString(),
-        roomId: activeRoomId,
+        roomId,
       };
 
-      addMessage(activeRoomId, assistantMessage);
+      addMessage(roomId, assistantMessage);
 
     // Initialize only regular content - thinking will be initialized only if <think> detected
     setStreamingRegular(prev => ({ ...prev, [assistantMessageId]: '' }));
@@ -531,7 +532,7 @@ function ChatPageContent() {
                 
                 // Apply emoji restoration to full content and update the message
                 const finalContent = restoreEmojis(fullContent);
-                updateMessage(activeRoomId, assistantMessageId, { content: finalContent });
+                updateMessage(roomId, assistantMessageId, { content: finalContent });
               }
               if (data.done) {
                 // Clean up streaming states
@@ -580,9 +581,33 @@ function ChatPageContent() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    sendMessage();
+    const content = inputMessage.trim();
+    if (!content || !currentModel || isStreaming) return;
+
+    if (!activeRoomId) {
+      // No room yet — create one, then send with the new ID
+      try {
+        const res = await fetch('/api/chat/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: content.slice(0, 60),
+            modelId: currentModel.id,
+          }),
+        });
+        const newRoom = await res.json();
+        addRoom(newRoom);
+        handleSetActiveRoom(newRoom.id);
+        await sendMessage(content, newRoom.id);
+      } catch (err) {
+        console.error('Failed to create room:', err);
+      }
+      return;
+    }
+
+    sendMessage(content);
   };
 
   const samplePrompts = [
@@ -967,17 +992,51 @@ function ChatPageContent() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">Welcome to Playground</h2>
-              <p className="text-muted-foreground mb-4">
-                Create a new conversation to get started
-              </p>
-              <Button onClick={() => createNewRoom()} disabled={!currentModel}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Conversation
-              </Button>
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h2 className="text-xl font-semibold mb-2">Welcome to Playground</h2>
+                <p className="text-muted-foreground mb-4">
+                  Type a message below to start a conversation
+                </p>
+              </div>
+            </div>
+            {/* Input area shown even without an active room */}
+            <div className="border-t p-4">
+              <div className="mb-4 opacity-80">
+                <p className="text-sm text-muted-foreground mb-2">Try these prompts:</p>
+                <div className="flex flex-wrap gap-2">
+                  {samplePrompts.map((prompt) => (
+                    <Button
+                      key={prompt}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInputMessage(prompt)}
+                      className="text-xs opacity-80 hover:opacity-100"
+                    >
+                      {prompt}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="flex space-x-2">
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder={currentModel ? `Message ${currentModel.name}...` : 'Loading models...'}
+                  disabled={isStreaming || !currentModel}
+                  className="flex-1"
+                />
+                <Button
+                  type="submit"
+                  disabled={!inputMessage.trim() || !currentModel}
+                  size="icon"
+                  className="h-10 w-10"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
           </div>
         )}

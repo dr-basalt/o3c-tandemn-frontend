@@ -49,7 +49,7 @@ export default function RootLayout({
       }}
       afterSignOutUrl="/sign-in"
     >
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
           <Providers>
             <div className="relative flex min-h-screen flex-col">

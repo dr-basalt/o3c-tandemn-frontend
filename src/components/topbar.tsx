@@ -4,15 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
-import { Search, Menu, X, User, CreditCard, BarChart3, ChevronDown } from 'lucide-react';
+import { Menu, X, User, CreditCard, BarChart3, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUIStore } from '@/store/ui';
 
 interface TopbarProps {
   onSearchFocus?: () => void;
@@ -22,6 +23,7 @@ export function Topbar({ onSearchFocus }: TopbarProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const { theme, toggleTheme } = useUIStore();
 
   useEffect(() => {
     setIsMounted(true);
@@ -46,8 +48,12 @@ export function Topbar({ onSearchFocus }: TopbarProps) {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link href="https://www.ori3com.cloud" className="flex items-center space-x-3 group">
-              <img src="/o3c-logo.png" alt="O3C" className="h-8 w-8 dark:hidden" />
-              <img src="/o3c-logo-dark.png" alt="O3C" className="h-8 w-8 hidden dark:block" />
+              <img
+                src="/o3c-logo.png"
+                alt="O3C"
+                className="h-8 w-8 transition-all duration-300"
+                style={{ filter: theme === 'light' ? 'invert(1) brightness(0.7)' : 'brightness(1.1)' }}
+              />
               <span className="font-semibold text-lg text-foreground transition-colors hover:text-accent group-hover:text-accent">O3C</span>
             </Link>
 
@@ -92,6 +98,17 @@ export function Topbar({ onSearchFocus }: TopbarProps) {
                         <BarChart3 className="h-4 w-4 mr-2" />
                         Usage Metrics
                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={toggleTheme}
+                      className="flex items-center cursor-pointer"
+                    >
+                      {isMounted && theme === 'dark' ? (
+                        <><Sun className="h-4 w-4 mr-2" />Light mode</>
+                      ) : (
+                        <><Moon className="h-4 w-4 mr-2" />Dark mode</>
+                      )}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
               </DropdownMenu>
@@ -204,6 +221,16 @@ export function Topbar({ onSearchFocus }: TopbarProps) {
                     <BarChart3 className="h-4 w-4 mr-3" />
                     Usage Metrics
                   </Link>
+                  <button
+                    onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
+                    className="flex items-center px-4 py-3 text-sm font-medium text-muted-foreground hover:text-accent transition-colors w-full"
+                  >
+                    {isMounted && theme === 'dark' ? (
+                      <><Sun className="h-4 w-4 mr-3" />Light mode</>
+                    ) : (
+                      <><Moon className="h-4 w-4 mr-3" />Dark mode</>
+                    )}
+                  </button>
                 </>
               </SignedIn>
             </nav>
