@@ -38,7 +38,7 @@ async function fetchGatewayModels() {
       headers: { Authorization: `Bearer ${apiKey}` },
       next: { revalidate: 60 },
     }),
-    fetchModelInfo(baseUrl, apiKey).catch(() => ({})),
+    fetchModelInfo(baseUrl, apiKey).catch((): Record<string, ModelInfoEntry> => ({})),
   ]);
 
   if (!modelsRes.ok) return null;
