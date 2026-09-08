@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell } from 'recharts';
-import { Calendar, TrendingUp, DollarSign, MessageSquare, Clock, History, ArrowUpRight, ArrowDownLeft, Zap, Activity } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, MessageSquare, Clock, History, ArrowUpRight, ArrowDownLeft, Zap, Activity, Download } from 'lucide-react';
 import { type Transaction } from '@/lib/credits-client';
 
 interface MetricsData {
@@ -60,6 +60,7 @@ export default function MetricsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [litellmSpend, setLitellmSpend] = useState<number | null>(null);
   const [filters, setFilters] = useState({
     modelId: '',
     // backendUsed: '', // Hidden from user
@@ -128,6 +129,37 @@ export default function MetricsPage() {
     }
   };
 
+  const fetchLitellmSpend = async () => {
+    try {
+      const response = await fetch('/api/v1/usage');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.litellm?.spend != null) setLitellmSpend(data.litellm.spend);
+      }
+    } catch {
+      // non-blocking
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const params = new URLSearchParams({ format: 'csv' });
+      if (filters.startDate) params.set('start_date', filters.startDate);
+      if (filters.endDate) params.set('end_date', filters.endDate);
+      const response = await fetch(`/api/v1/usage?${params}`);
+      if (!response.ok) return;
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `o3c-usage-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   // Debounce filters to prevent excessive API calls
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -143,6 +175,7 @@ export default function MetricsPage() {
       fetchMetrics(true); // Initial load
       fetchTransactions();
       fetchAvailableModels();
+      fetchLitellmSpend();
     }
   }, [isSignedIn]);
 
@@ -234,9 +267,15 @@ export default function MetricsPage() {
             </div>
           )}
         </div>
-        <Button onClick={() => fetchMetrics(true)} variant="outline">
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleExportCSV} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-1" />
+            Export CSV
+          </Button>
+          <Button onClick={() => fetchMetrics(true)} variant="outline">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -317,6 +356,19 @@ export default function MetricsPage() {
             <div className="text-2xl font-bold">${metrics.summary.totalCost.toFixed(4)}</div>
           </CardContent>
         </Card>
+
+        {litellmSpend != null && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">LiteLLM Spend</CardTitle>
+              <Zap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${litellmSpend.toFixed(4)}</div>
+              <p className="text-xs text-muted-foreground">tracked by gateway</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Charts - Side by Side */}

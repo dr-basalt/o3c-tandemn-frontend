@@ -92,3 +92,35 @@ export async function getLitellmKeyInfo(key: string): Promise<LitellmKeyInfo | n
     return null;
   }
 }
+
+export interface LitellmSpendLog {
+  request_id: string;
+  model: string;
+  cost: number;
+  startTime: string;
+  usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+}
+
+// Fetch per-request spend logs for a virtual key from litellm-o3c.
+// Returns empty array when LITELLM_MASTER_KEY is absent or the endpoint is unavailable.
+export async function getLitellmSpendLogs(
+  key: string,
+  startDate?: string,
+  endDate?: string
+): Promise<LitellmSpendLog[]> {
+  const masterKey = process.env.LITELLM_MASTER_KEY;
+  if (!masterKey) return [];
+  try {
+    const params = new URLSearchParams({ api_key: key });
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+    const resp = await fetch(`${getLitellmBaseUrl()}/spend/logs?${params}`, {
+      headers: { Authorization: `Bearer ${masterKey}` },
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return Array.isArray(data) ? (data as LitellmSpendLog[]) : [];
+  } catch {
+    return [];
+  }
+}
