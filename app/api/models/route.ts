@@ -1,15 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/mock/db';
 import { modelsQuerySchema } from '@/lib/zod-schemas';
-import { sleep } from '@/lib/utils';
+
+async function fetchGatewayModels() {
+  const baseUrl = process.env.OPENROUTER_API_BASE_URL;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!baseUrl || !apiKey) return null;
+
+  const res = await fetch(`${baseUrl}/models`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const litellmModels: { id: string; description?: string }[] = data?.data ?? [];
+  if (litellmModels.length === 0) return null;
+
+  return litellmModels.map((m) => ({
+    id: m.id,
+    name: m.id,
+    vendor: 'o3c',
+    series: 'Other' as const,
+    short: m.id,
+    context: 128000,
+    promptPrice: 0,
+    completionPrice: 0,
+    tokensPerWeek: 0,
+    latencyMs: 500,
+    weeklyGrowthPct: 0,
+    modalities: ['text'] as ('text')[],
+    description: m.description ?? m.id,
+    badges: ['O3C Gateway'],
+  }));
+}
 
 export async function GET(request: NextRequest) {
   try {
-    // Removed artificial latency for better performance
-    
     const { searchParams } = new URL(request.url);
-    
-    // Parse query parameters
+
     const queryParams = {
       q: searchParams.get('q') || undefined,
       modalities: searchParams.getAll('modalities') || undefined,
@@ -22,29 +51,30 @@ export async function GET(request: NextRequest) {
       page: searchParams.get('page') ? Number(searchParams.get('page')) : 1,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : 20,
     };
-    
-    // Validate query parameters
+
     const validatedParams = modelsQuerySchema.parse(queryParams);
-    
-    // Get filtered models
-    const result = db.getModels(validatedParams);
-    
-    return NextResponse.json(
-      {
-        ...result,
-        page: validatedParams.page || 1,
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
-        },
+
+    if (process.env.GATEWAY_ENABLED === 'true') {
+      const gatewayModels = await fetchGatewayModels();
+      if (gatewayModels) {
+        const page = validatedParams.page ?? 1;
+        const limit = validatedParams.limit ?? 20;
+        const start = (page - 1) * limit;
+        const items = gatewayModels.slice(start, start + limit);
+        return NextResponse.json(
+          { items, total: gatewayModels.length, hasMore: start + limit < gatewayModels.length, page },
+          { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } }
+        );
       }
+    }
+
+    const result = db.getModels(validatedParams);
+    return NextResponse.json(
+      { ...result, page: validatedParams.page || 1 },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } }
     );
   } catch (error) {
     console.error('Error in /api/models:', error);
-    return NextResponse.json(
-      { error: 'Invalid query parameters' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 });
   }
 }

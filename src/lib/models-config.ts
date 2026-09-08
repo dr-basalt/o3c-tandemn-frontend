@@ -129,8 +129,8 @@ export function getOpenRouterModelId(tandemnModelId: string): string {
     return config.openRouterModelId;
   }
   
-  // Default fallback to Llama 3.3 70B (free)
-  return 'meta-llama/llama-3.3-70b-instruct';
+  // Unknown model: pass through the ID directly (e.g. litellm-o3c virtual model names)
+  return tandemnModelId;
 }
 
 // Get KPI stats from model data

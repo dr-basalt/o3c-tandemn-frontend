@@ -24,14 +24,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { modelId, roomId, messages } = chatSendSchema.parse(body);
     
-    // Get the model to determine latency
-    const model = db.getModelById(modelId);
-    if (!model) {
-      return NextResponse.json(
-        { error: 'Model not found' },
-        { status: 404 }
-      );
-    }
+    // Get model — unknown IDs (e.g. litellm-o3c virtual models) are passed through
+    const model = db.getModelById(modelId) ?? {
+      id: modelId,
+      name: modelId,
+      vendor: 'o3c',
+      series: 'Other' as const,
+      short: modelId,
+      context: 128000,
+      promptPrice: 0,
+      completionPrice: 0,
+      tokensPerWeek: 0,
+      latencyMs: 1000,
+      weeklyGrowthPct: 0,
+      modalities: ['text'] as ('text')[],
+      description: modelId,
+      badges: [],
+    };
 
     // Calculate conversation text for token estimation
     const conversationText = messages.map(m => m.content).join(' ');
