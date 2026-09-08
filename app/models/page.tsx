@@ -43,7 +43,7 @@ async function fetchLitellmModels(): Promise<TandemnModel[]> {
       headers: { Authorization: `Bearer ${apiKey}` },
       cache: 'no-store',
     }),
-    fetchModelInfo(baseUrl, apiKey).catch(() => ({})),
+    fetchModelInfo(baseUrl, apiKey).catch((): Record<string, ModelInfoEntry> => ({})),
   ]);
 
   if (!res.ok) return [];
