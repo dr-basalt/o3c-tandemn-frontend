@@ -11,14 +11,16 @@
     "merge:accounts": "tsx scripts/merge-clerk-accounts.ts",
     "merge:all": "tsx scripts/merge-all-clerk-accounts.ts",
     "fix:balances": "tsx scripts/fix-account-balances.ts",
-    "db:indexes": "tsx scripts/ensure-db-indexes.ts"
+    "db:indexes": "tsx scripts/ensure-db-indexes.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ci": "playwright test --reporter=junit",
+    "test:e2e:verbose": "playwright test --reporter=list"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.896.0",
     "@aws-sdk/lib-storage": "^3.899.0",
     "@aws-sdk/s3-request-presigner": "^3.911.0",
     "@clerk/nextjs": "^6.31.4",
-    "dotenv": "^16.4.5",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -44,6 +46,7 @@
     "clsx": "^2.0.0",
     "cmdk": "^1.0.0",
     "date-fns": "^3.0.0",
+    "dotenv": "^16.4.5",
     "fuse.js": "^7.0.0",
     "ioredis": "^5.7.0",
     "jose": "^6.0.13",
@@ -67,6 +70,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/papaparse": "^5.3.14",
     "eslint": "^8",
     "eslint-config-next": "15.2.3",

@@ -50,3 +50,7 @@ Thumbs.db
 # pnpm-lock.yaml
 # clerk configuration (can include secrets)
 /.clerk/
+
+# E2E test secrets and results
+.env.test
+e2e-results.xml
