@@ -6,6 +6,7 @@ export interface IUserAccount extends Document {
   email: string;
   credits: number;
   lastCreditUpdate?: Date;
+  litellmVirtualKey?: string; // Virtual key in litellm-o3c for per-user spend tracking
   preferences?: {
     theme?: 'light' | 'dark';
     notifications?: boolean;
@@ -34,6 +35,10 @@ const UserAccountSchema = new Schema<IUserAccount>({
   },
   lastCreditUpdate: {
     type: Date,
+  },
+  litellmVirtualKey: {
+    type: String,
+    index: true,
   },
   preferences: {
     theme: {

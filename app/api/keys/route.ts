@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { generateAPIKey, getUserAPIKeys, deactivateAPIKey } from '@/lib/credits';
+import { generateAPIKey, getUserAPIKeys, deactivateAPIKey, getLitellmVirtualKey } from '@/lib/credits';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         apiKey: result.apiKey,
+        litellmKey: result.litellmKey ?? null,
         message: result.message,
       });
     } else {
@@ -49,11 +50,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const apiKeys = await getUserAPIKeys(userId);
-    
+    const [apiKeys, litellmKey] = await Promise.all([
+      getUserAPIKeys(userId),
+      getLitellmVirtualKey(userId),
+    ]);
+
     // Return full keys since these belong to the authenticated user
     // Users need to be able to copy their own API keys
-    return NextResponse.json({ apiKeys });
+    return NextResponse.json({ apiKeys, litellmKey: litellmKey ?? null });
   } catch (error) {
     console.error('Error in GET /api/keys:', error);
     return NextResponse.json(

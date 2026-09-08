@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAPIKey, getUserCredits, getTransactionHistory } from '@/lib/credits';
+import { validateAPIKey, getUserCredits, getTransactionHistory, getLitellmVirtualKey } from '@/lib/credits';
+import { getLitellmKeyInfo } from '@/lib/litellm-admin';
 
 // Force dynamic rendering - don't cache this route
 export const dynamic = 'force-dynamic';
@@ -30,11 +31,15 @@ export async function GET(request: NextRequest) {
 
     const userId = validation.userId;
 
-    // Get current balance
-    const balance = await getUserCredits(userId);
-    
-    // Get recent transactions for additional context
-    const transactions = await getTransactionHistory(userId);
+    // Get current balance and litellm spend in parallel
+    const [balance, transactions, litellmKey] = await Promise.all([
+      getUserCredits(userId),
+      getTransactionHistory(userId),
+      getLitellmVirtualKey(userId),
+    ]);
+
+    const litellmInfo = litellmKey ? await getLitellmKeyInfo(litellmKey) : null;
+    const litellmSpend = litellmInfo?.spend ?? 0;
     const recentTransactions = transactions.slice(0, 5);
     
     // Calculate usage stats for this month
@@ -50,10 +55,11 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.json({
       data: {
-        balance: balance, // Full precision, no rounding
+        balance: balance,
         currency: 'USD',
+        litellm_spend: litellmSpend,
         monthly_usage: {
-          spent: monthlySpent, // Full precision, no rounding
+          spent: monthlySpent,
           api_calls: monthlyApiCalls,
           period: `${startOfMonth.toISOString().split('T')[0]} to ${now.toISOString().split('T')[0]}`
         },

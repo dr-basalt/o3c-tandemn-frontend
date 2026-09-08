@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAPIKey, getUserCredits, deductCredits, addTransaction } from '@/lib/credits';
+import { validateAPIKey, getUserCredits, deductCredits, addTransaction, getLitellmVirtualKey } from '@/lib/credits';
 import { getModelById, calculateCost } from '@/config/models';
 import { getModelEndpoint } from '@/config/model-endpoints';
 import { tandemnClient, mapModelToOpenRouter } from '@/lib/tandemn-client';
-import { openRouterClient } from '@/lib/openrouter-client';
+import { OpenRouterClient, openRouterClient } from '@/lib/openrouter-client';
 
-3// CORS headers
+// CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -43,6 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = validation.userId;
+
+    // Resolve user's litellm virtual key for per-user spend tracking
+    const userLitellmKey = await getLitellmVirtualKey(userId);
+    // Use user's virtual key when available, otherwise fall back to shared key
+    const userOpenRouterClient = userLitellmKey
+      ? new OpenRouterClient(userLitellmKey)
+      : openRouterClient;
 
     // Parse request body
     const body = await request.json();
@@ -248,7 +255,7 @@ export async function POST(request: NextRequest) {
                   };
                   
                   // Use REAL OpenRouter streaming (no more fake streaming!)
-                  await openRouterClient.chatStreamWithTimeout(
+                  await userOpenRouterClient.chatStreamWithTimeout(
                     openRouterRequest,
                     (content: string) => {
                       if (!streamActive || streamController.signal.aborted) return;
@@ -353,7 +360,7 @@ export async function POST(request: NextRequest) {
               min_p: requestParams.min_p
             };
             
-            const openRouterResponse = await openRouterClient.chatWithTimeout(openRouterRequest, 60000); // 1 minute for OpenRouter
+            const openRouterResponse = await userOpenRouterClient.chatWithTimeout(openRouterRequest, 60000); // 1 minute for OpenRouter
             
             if (openRouterResponse && openRouterResponse.choices?.[0]) {
               responseContent = openRouterResponse.choices[0].message.content || '';

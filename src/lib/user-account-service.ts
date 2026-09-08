@@ -9,6 +9,7 @@ import UserTransaction from './models/UserTransaction';
 import UserAPIKey from './models/UserAPIKey';
 import { createHash, randomBytes } from 'crypto';
 import { calculateCost } from '@/config/models';
+import { createLitellmVirtualKey, deleteLitellmVirtualKey } from './litellm-admin';
 
 
 const clerkClient = createClerkClient({
@@ -245,8 +246,31 @@ export async function addTransaction(userId: string, transaction: Omit<Transacti
   }
 }
 
+// Ensure the user has a litellm-o3c virtual key, creating one if needed.
+// Returns the key value or null when LITELLM_MASTER_KEY is not configured.
+export async function ensureLitellmKey(clerkUserId: string): Promise<string | null> {
+  await dbConnect();
+  const account = await getUserAccount(clerkUserId);
+  if (!account) return null;
+
+  if (account.litellmVirtualKey) return account.litellmVirtualKey;
+
+  const virtualKey = await createLitellmVirtualKey(clerkUserId);
+  if (!virtualKey) return null;
+
+  await UserAccount.findByIdAndUpdate(account._id, { litellmVirtualKey: virtualKey });
+  cache.delete(CacheKeys.userMetadata(clerkUserId));
+  return virtualKey;
+}
+
+// Return the user's existing litellm virtual key (does not create one).
+export async function getLitellmVirtualKey(clerkUserId: string): Promise<string | null> {
+  const account = await getUserAccount(clerkUserId);
+  return account?.litellmVirtualKey ?? null;
+}
+
 // Generate API key for user
-export async function generateAPIKey(name: string, userId?: string): Promise<{ success: boolean; apiKey?: APIKey; message: string }> {
+export async function generateAPIKey(name: string, userId?: string): Promise<{ success: boolean; apiKey?: APIKey; litellmKey?: string; message: string }> {
   try {
     console.log('🔑 Generating API key...');
     console.log('  Name:', name);
@@ -315,8 +339,11 @@ export async function generateAPIKey(name: string, userId?: string): Promise<{ s
     // Invalidate API keys cache
     cache.delete(CacheKeys.userApiKeys(userIdToUse));
 
+    // Ensure user has a litellm-o3c virtual key (created on demand, no-op when master key not set)
+    const litellmKey = await ensureLitellmKey(userIdToUse);
+
     console.log('✅ API key generation complete');
-    return { success: true, apiKey, message: 'API key generated successfully' };
+    return { success: true, apiKey, litellmKey: litellmKey ?? undefined, message: 'API key generated successfully' };
   } catch (error) {
     console.error('❌ Error generating API key:', error);
     console.error('Error generating API key:', error);
@@ -411,6 +438,15 @@ export async function deactivateAPIKey(userId: string, keyId: string): Promise<b
       console.log('API key deactivated successfully:', result._id);
       // Invalidate API keys cache
       cache.delete(CacheKeys.userApiKeys(userId));
+
+      // If the user has no more active platform keys, delete their litellm virtual key too
+      const remaining = await UserAPIKey.countDocuments({ userId: account._id.toString(), isActive: true });
+      if (remaining === 0 && account.litellmVirtualKey) {
+        await deleteLitellmVirtualKey(account.litellmVirtualKey);
+        await UserAccount.findByIdAndUpdate(account._id, { $unset: { litellmVirtualKey: '' } });
+        cache.delete(CacheKeys.userMetadata(userId));
+      }
+
       return true;
     }
 

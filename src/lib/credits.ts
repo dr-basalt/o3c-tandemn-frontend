@@ -12,6 +12,8 @@ export {
   giveWelcomeCredits,
   chargeForUsage,
   chargeCredits,
+  ensureLitellmKey,
+  getLitellmVirtualKey,
   type APIKey,
   type Transaction,
 } from './user-account-service';
