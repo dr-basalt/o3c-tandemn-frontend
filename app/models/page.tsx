@@ -1,22 +1,48 @@
 import { Suspense } from 'react';
-import { getAllModels } from '@/config/models';
+import { getAllModels, TandemnModel } from '@/config/models';
 import ModelsClient from './models-client';
 import ModelsLoading from './loading';
 
-// Server Component - fetches data on the server
-async function getModels() {
+async function fetchLitellmModels(): Promise<TandemnModel[]> {
+  const baseUrl = process.env.OPENROUTER_API_BASE_URL;
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!baseUrl || !apiKey || process.env.GATEWAY_ENABLED !== 'true') return [];
+
+  const res = await fetch(`${baseUrl}/models`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const items: { id: string }[] = data?.data ?? [];
+  if (items.length === 0) return [];
+
+  return items.map((m) => ({
+    id: m.id,
+    name: m.id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    provider: 'O3C',
+    description: `Model ${m.id} disponible via api.ori3com.cloud`,
+    context_length: 128000,
+    input_price_per_1m: 0,
+    output_price_per_1m: 0,
+    capabilities: ['text'],
+    max_tokens: 4096,
+    is_available: true,
+  }));
+}
+
+async function getModels(): Promise<TandemnModel[]> {
   try {
-    // Fetch directly from the config instead of making an HTTP call
-    const models = getAllModels();
-    return models;
-    } catch (error) {
-      console.error('Error fetching models:', error);
-    return [];
+    const gateway = await fetchLitellmModels();
+    if (gateway.length > 0) return gateway;
+  } catch (error) {
+    console.error('Gateway models fetch failed:', error);
   }
+  return getAllModels();
 }
 
 export default async function ModelsPage() {
-  // Fetch models on the server
   const models = await getModels();
 
   return (
