@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
                 model: model,
                 messages: backendMessages,
                 max_tokens: maxTokens,
-                temperature: (requestParams as Record<string, unknown>).temperature ?? 0.7,
+                temperature: ((requestParams as Record<string, unknown>).temperature as number | undefined) ?? 0.7,
                 stream: true,
               };
               await userOpenRouterClient.chatStreamWithTimeout(
