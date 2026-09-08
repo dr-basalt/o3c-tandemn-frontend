@@ -73,6 +73,8 @@ async function fetchLitellmModels(): Promise<TandemnModel[]> {
       capabilities: ['text'],
       max_tokens: info.max_tokens ?? 4096,
       is_available: true,
+      tier: 'free' as const,
+      routing: 'litellm' as const,
     };
   });
 }

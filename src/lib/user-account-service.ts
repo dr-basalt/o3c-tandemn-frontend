@@ -9,7 +9,7 @@ import UserTransaction from './models/UserTransaction';
 import UserAPIKey from './models/UserAPIKey';
 import { createHash, randomBytes } from 'crypto';
 import { calculateCost } from '@/config/models';
-import { createLitellmVirtualKey, deleteLitellmVirtualKey } from './litellm-admin';
+import { createLitellmVirtualKey, deleteLitellmVirtualKey, getLitellmKeyInfo, updateLitellmKeyBudget } from './litellm-admin';
 
 
 const clerkClient = createClerkClient({
@@ -121,12 +121,12 @@ export async function getUserCredits(userId?: string): Promise<number> {
 export async function addCredits(userId: string, amount: number): Promise<boolean> {
   try {
     await dbConnect();
-    
+
     const account = await getUserAccount(userId);
     if (!account) return false;
 
     const newCredits = account.credits + amount;
-    
+
     await UserAccount.findByIdAndUpdate(account._id, {
       credits: newCredits,
       lastCreditUpdate: new Date(),
@@ -136,6 +136,15 @@ export async function addCredits(userId: string, amount: number): Promise<boolea
     const cacheKey = CacheKeys.userCredits(userId);
     cache.delete(cacheKey);
     cache.delete(CacheKeys.userMetadata(userId));
+
+    // Sync litellm max_budget: spend_so_far + new_balance (fire-and-forget)
+    const litellmKey = account.litellmVirtualKey;
+    if (litellmKey) {
+      getLitellmKeyInfo(litellmKey).then(info => {
+        const spend = info?.spend ?? 0;
+        return updateLitellmKeyBudget(litellmKey, spend + newCredits);
+      }).catch(() => {});
+    }
 
     return true;
   } catch (error) {
@@ -255,7 +264,8 @@ export async function ensureLitellmKey(clerkUserId: string): Promise<string | nu
 
   if (account.litellmVirtualKey) return account.litellmVirtualKey;
 
-  const virtualKey = await createLitellmVirtualKey(clerkUserId);
+  // Set max_budget = current MongoDB balance so litellm can enforce limits from day one
+  const virtualKey = await createLitellmVirtualKey(clerkUserId, account.credits);
   if (!virtualKey) return null;
 
   await UserAccount.findByIdAndUpdate(account._id, { litellmVirtualKey: virtualKey });

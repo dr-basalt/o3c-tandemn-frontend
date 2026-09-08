@@ -332,14 +332,15 @@ export async function POST(request: NextRequest) {
           // Fallback to OpenRouter
           try {
             const openRouterModel = mapModelToOpenRouter(model);
+            const rp = requestParams as Record<string, unknown>;
             const openRouterRequest = {
               model: openRouterModel,
               messages: backendMessages,
               max_tokens: maxTokens, // Use user's capped value (max 2000)
-              temperature: requestParams.temperature,
-              top_p: requestParams.top_p,
-              top_k: requestParams.top_k,
-              min_p: requestParams.min_p
+              temperature: rp.temperature as number | undefined,
+              top_p: rp.top_p as number | undefined,
+              top_k: rp.top_k as number | undefined,
+              min_p: rp.min_p as number | undefined,
             };
             
             const openRouterResponse = await userOpenRouterClient.chatWithTimeout(openRouterRequest, 60000); // 1 minute for OpenRouter
@@ -378,7 +379,7 @@ export async function POST(request: NextRequest) {
         await addTransaction(userId, {
           type: 'usage_charge',
           amount: -actualCost,
-          description: `${modelInfo.name} - ${totalTokens} tokens (${backendUsed})`,
+          description: `${modelInfo?.name ?? model} - ${totalTokens} tokens (${backendUsed})`,
           status: 'completed',
           metadata: {
             model,
@@ -388,7 +389,7 @@ export async function POST(request: NextRequest) {
             backend: backendUsed
           }
         });
-        
+
         // Return OpenAI-compatible non-streaming response
         const result = {
           id: `chatcmpl-${Date.now()}`,
@@ -414,18 +415,18 @@ export async function POST(request: NextRequest) {
           billing: {
             credits_charged: actualCost,
             credits_remaining: userBalance - actualCost,
-            input_cost: (actualInputTokens / 1000000) * modelInfo.input_price_per_1m, // Full precision, no rounding
-            output_cost: (actualOutputTokens / 1000000) * modelInfo.output_price_per_1m, // Full precision, no rounding
+            input_cost: (actualInputTokens / 1000000) * (modelInfo?.input_price_per_1m ?? 0),
+            output_cost: (actualOutputTokens / 1000000) * (modelInfo?.output_price_per_1m ?? 0),
             pricing: {
-              input_price_per_1m_tokens: modelInfo.input_price_per_1m,
-              output_price_per_1m_tokens: modelInfo.output_price_per_1m,
+              input_price_per_1m_tokens: modelInfo?.input_price_per_1m ?? 0,
+              output_price_per_1m_tokens: modelInfo?.output_price_per_1m ?? 0,
             },
           },
           model_info: {
-            provider: modelInfo.provider,
-            context_length: modelInfo.context_length,
-            capabilities: modelInfo.capabilities,
-            max_tokens: modelInfo.max_tokens
+            provider: modelInfo?.provider ?? 'unknown',
+            context_length: modelInfo?.context_length ?? 128000,
+            capabilities: modelInfo?.capabilities ?? ['text'],
+            max_tokens: modelInfo?.max_tokens ?? 4096,
           }
         };
         

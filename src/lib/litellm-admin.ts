@@ -15,7 +15,7 @@ export interface LitellmKeyInfo {
 
 // Create a per-user virtual key in litellm-o3c.
 // Returns the raw key value (sk-...) or null when LITELLM_MASTER_KEY is not set or the call fails.
-export async function createLitellmVirtualKey(clerkUserId: string): Promise<string | null> {
+export async function createLitellmVirtualKey(clerkUserId: string, initialBudget?: number): Promise<string | null> {
   const masterKey = process.env.LITELLM_MASTER_KEY;
   if (!masterKey) return null;
 
@@ -29,6 +29,7 @@ export async function createLitellmVirtualKey(clerkUserId: string): Promise<stri
       body: JSON.stringify({
         key_alias: `o3c-${clerkUserId.slice(-12)}`,
         metadata: { clerk_user_id: clerkUserId, platform: 'o3c' },
+        ...(initialBudget !== undefined ? { max_budget: initialBudget } : {}),
       }),
     });
     if (!resp.ok) return null;
@@ -36,6 +37,24 @@ export async function createLitellmVirtualKey(clerkUserId: string): Promise<stri
     return (data as { key?: string }).key ?? null;
   } catch {
     return null;
+  }
+}
+
+// Update the max_budget of a virtual key. Fire-and-forget — never throws.
+export async function updateLitellmKeyBudget(key: string, maxBudget: number): Promise<void> {
+  const masterKey = process.env.LITELLM_MASTER_KEY;
+  if (!masterKey) return;
+  try {
+    await fetch(`${getLitellmBaseUrl()}/key/update`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${masterKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ key, max_budget: maxBudget }),
+    });
+  } catch {
+    // ignore
   }
 }
 
